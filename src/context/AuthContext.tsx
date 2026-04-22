@@ -57,6 +57,93 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           firmantes: '3 Voceros',
           createdAt: new Date().toISOString(),
         };
+      } else if (email === 'comuna@carrizal.gob.ve') {
+        mockUser = {
+          id: '3',
+          email,
+          role: 'comuna',
+          firstName: 'Coordinador',
+          lastName: 'Comunal',
+          cedula: 'V-11223344',
+          phone: '0412-3333333',
+          comunaName: 'Comuna Lanceros de Carrizal',
+          rif: 'J-50000000-0',
+          createdAt: new Date().toISOString(),
+        };
+      } else if (email === 'sala@carrizal.gob.ve') {
+        mockUser = {
+          id: '4',
+          email,
+          role: 'sala_autogobierno',
+          firstName: 'Coordinador',
+          lastName: 'de Sala',
+          cedula: 'V-99887766',
+          phone: '0412-5555555',
+          nombreSala: 'Sala de Autogobierno "Eje Central"',
+          ubicacion: 'Casco Central de Carrizal',
+          vinculoAdministrativo: 'Circuito 1',
+          estatus: 'consolidada',
+          createdAt: new Date().toISOString(),
+        };
+      } else if (email === 'alcaldesa@carrizal.gob.ve') {
+        mockUser = {
+          id: '5',
+          email,
+          role: 'alcaldesa',
+          firstName: 'Morales',
+          lastName: 'Administración',
+          cedula: 'V-12121212',
+          phone: '0414-0000000',
+          createdAt: new Date().toISOString(),
+        };
+      } else if (email === 'comunas@carrizal.gob.ve') {
+        mockUser = {
+          id: 'dir_1',
+          email,
+          role: 'director',
+          directorType: 'comunas_consejos_comunales',
+          firstName: 'Director',
+          lastName: 'de Comunas',
+          cedula: 'V-10101010',
+          phone: '0412-1111111',
+          createdAt: new Date().toISOString(),
+        };
+      } else if (email === 'planificacion@carrizal.gob.ve') {
+        mockUser = {
+          id: 'dir_2',
+          email,
+          role: 'director',
+          directorType: 'planificacion_formacion',
+          firstName: 'Director',
+          lastName: 'de Planificación',
+          cedula: 'V-20202020',
+          phone: '0412-2222222',
+          createdAt: new Date().toISOString(),
+        };
+      } else if (email === 'adultomayor@carrizal.gob.ve') {
+        mockUser = {
+          id: 'dir_3',
+          email,
+          role: 'director',
+          directorType: 'adultas_adulto_mayor',
+          firstName: 'Director',
+          lastName: 'de Adulto Mayor',
+          cedula: 'V-30303030',
+          phone: '0412-3333333',
+          createdAt: new Date().toISOString(),
+        };
+      } else if (email === 'digitalizacion@carrizal.gob.ve') {
+        mockUser = {
+          id: 'dir_4',
+          email,
+          role: 'director',
+          directorType: 'digitalizacion_tramites',
+          firstName: 'Director',
+          lastName: 'de Digitalización',
+          cedula: 'V-40404040',
+          phone: '0412-4444444',
+          createdAt: new Date().toISOString(),
+        };
       } else {
         mockUser = {
           id: 'default',

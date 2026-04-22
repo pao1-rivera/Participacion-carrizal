@@ -22,6 +22,8 @@ export interface UserBase {
   cedula: string;
   phone: string;
   createdAt: string;
+  comunaName?: string;
+  nombreConsejo?: string;
 }
 
 export interface ConsejoComunalData extends UserBase {

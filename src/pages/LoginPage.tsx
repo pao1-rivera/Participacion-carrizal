@@ -127,6 +127,39 @@ const LoginPage = () => {
                   {isLoading ? 'Cargando...' : 'Acceder'}
                 </button>
               </div>
+
+              {/* Dev Quick Access */}
+              <div className="pt-4 space-y-3">
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-gray-100"></span></div>
+                  <div className="relative flex justify-center text-[8px] font-bold uppercase tracking-widest text-gray-300">
+                    <span className="bg-white px-2">Acceso Rápido (Demo)</span>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <button 
+                    type="button" 
+                    onClick={() => { setEmail('admin@carrizal.gob.ve'); setPassword('password'); }}
+                    className="flex-1 py-2 rounded-lg bg-slate-50 text-[9px] font-black uppercase text-slate-400 border border-slate-100 hover:bg-slate-100 transition-colors"
+                  >
+                    Admin
+                  </button>
+                  <button 
+                    type="button" 
+                    onClick={() => { setEmail('comuna@carrizal.gob.ve'); setPassword('password'); }}
+                    className="flex-1 py-2 rounded-lg bg-indigo-50 text-[9px] font-black uppercase text-indigo-500 border border-indigo-100 hover:bg-indigo-100 transition-colors"
+                  >
+                    Comuna
+                  </button>
+                  <button 
+                    type="button" 
+                    onClick={() => { setEmail('consejo@test.com'); setPassword('password'); }}
+                    className="flex-1 py-2 rounded-lg bg-emerald-50 text-[9px] font-black uppercase text-emerald-500 border border-emerald-100 hover:bg-emerald-100 transition-colors"
+                  >
+                    Consejo
+                  </button>
+                </div>
+              </div>
             </form>
           </div>
 
