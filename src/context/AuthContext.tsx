@@ -28,16 +28,48 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Mock login logic
     setIsLoading(true);
     setTimeout(() => {
-      const mockUser: UserProfile = {
-        id: '1',
-        email,
-        role: 'admin',
-        firstName: 'Administrador',
-        lastName: 'Sistema',
-        cedula: 'V-00000000',
-        phone: '0412-0000000',
-        createdAt: new Date().toISOString(),
-      };
+      let mockUser: UserProfile;
+
+      if (email === 'admin@carrizal.gob.ve') {
+        mockUser = {
+          id: '1',
+          email,
+          role: 'admin',
+          firstName: 'Admin',
+          lastName: 'Municipal',
+          cedula: 'V-00000001',
+          phone: '0412-1111111',
+          createdAt: new Date().toISOString(),
+        };
+      } else if (email === 'consejo@test.com') {
+        mockUser = {
+          id: '2',
+          email,
+          role: 'consejo_comunal',
+          firstName: 'Vocero',
+          lastName: 'Unidad',
+          cedula: 'V-12345678',
+          phone: '0414-0000000',
+          nombreConsejo: 'C.C. El Despertar de Carrizal',
+          rif: 'J-12345678-9',
+          comunaPertenece: 'Comuna Brisas',
+          cuentaBancaria: '0102-0000-0000-0000-0000',
+          firmantes: '3 Voceros',
+          createdAt: new Date().toISOString(),
+        };
+      } else {
+        mockUser = {
+          id: 'default',
+          email,
+          role: 'secretario',
+          firstName: 'Usuario',
+          lastName: 'Demo',
+          cedula: 'V-00000000',
+          phone: '0412-0000000',
+          createdAt: new Date().toISOString(),
+        };
+      }
+
       setUser(mockUser);
       localStorage.setItem('mock_user', JSON.stringify(mockUser));
       setIsLoading(false);
