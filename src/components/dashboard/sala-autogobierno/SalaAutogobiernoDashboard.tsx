@@ -295,22 +295,28 @@ const SidebarContent = ({
               className={cn(
                 "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all relative group",
                 activeTab === item.id 
-                  ? "bg-brand-primary text-white shadow-md shadow-brand-primary/20" 
-                  : "text-gray-500 hover:bg-gray-100"
+                  ? "bg-brand-primary/10 text-brand-primary" 
+                  : "text-slate-500 hover:bg-gray-50 hover:text-slate-800"
               )}
             >
               <item.icon size={20} className={cn(
                 "shrink-0",
-                activeTab === item.id ? "text-white" : "group-hover:text-brand-primary transition-colors"
+                activeTab === item.id ? "text-brand-primary" : "text-slate-400 group-hover:text-brand-primary transition-colors"
               )} />
               {!collapsed && (
-                <span className="font-medium text-sm flex-1 text-left">{item.label}</span>
+                <span className="font-bold text-sm flex-1 text-left">{item.label}</span>
               )}
               {!collapsed && item.children && (
                 <ChevronDown size={14} className={cn(
                   "transition-transform",
                   expandedItems.includes(item.id) ? "rotate-180" : ""
                 )} />
+              )}
+              {activeTab === item.id && !collapsed && (
+                <motion.div
+                  layoutId="activeNavSala"
+                  className="ml-auto w-1 h-4 rounded-full bg-brand-primary"
+                />
               )}
             </button>
             

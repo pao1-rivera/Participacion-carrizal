@@ -274,14 +274,20 @@ const SidebarContent = ({ user, collapsed, activeTab, setActiveTab, expandedItem
               className={cn(
                 "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all group",
                 activeTab === item.id || (item.children?.some(c => c.id === activeTab))
-                  ? "bg-brand-primary text-white shadow-md shadow-brand-primary/20" 
-                  : "text-gray-500 hover:bg-gray-100"
+                  ? "bg-brand-primary/10 text-brand-primary" 
+                  : "text-slate-500 hover:bg-gray-50 hover:text-slate-800"
               )}
             >
-              <item.icon size={20} className={activeTab === item.id ? "text-white" : "group-hover:text-brand-primary transition-colors"} />
-              {!collapsed && <span className="font-medium text-sm flex-1 text-left">{item.label}</span>}
+              <item.icon size={20} className={cn("shrink-0", (activeTab === item.id || item.children?.some(c => c.id === activeTab)) ? "text-brand-primary" : "text-slate-400")} />
+              {!collapsed && <span className="font-bold text-sm flex-1 text-left">{item.label}</span>}
               {!collapsed && item.children && (
-                <ChevronDown size={14} className={cn("transition-transform", expandedItems.includes(item.id) ? "rotate-180" : "")} />
+                <ChevronDown className={cn("transition-transform", expandedItems.includes(item.id) ? "rotate-180" : "")} size={14} />
+              )}
+              {(activeTab === item.id || item.children?.some(c => c.id === activeTab)) && !collapsed && (
+                <motion.div
+                  layoutId="activeNavDirector"
+                  className="ml-auto w-1 h-4 rounded-full bg-brand-primary"
+                />
               )}
             </button>
             {!collapsed && item.children && expandedItems.includes(item.id) && (

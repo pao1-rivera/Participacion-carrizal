@@ -28,6 +28,8 @@ import { ConsejoComunalDashboard } from '../components/dashboard/consejo-comunal
 import { ComunaDashboard } from '../components/dashboard/comuna/ComunaDashboard';
 import { SalaAutogobiernoDashboard } from '../components/dashboard/sala-autogobierno/SalaAutogobiernoDashboard';
 import { DirectorDashboard } from '../components/dashboard/direcciones/DirectorDashboard';
+import { SecretarioDashboard } from '../components/dashboard/secretario/SecretarioDashboard';
+import { AlcaldesaDashboard } from '../components/dashboard/alcaldesa/AlcaldesaDashboard';
 import { AgendaView } from '../components/dashboard/AgendaView';
 import { StatsView } from '../components/dashboard/StatsView';
 
@@ -105,6 +107,14 @@ const DashboardPage = () => {
 
     if (user.role === 'director') {
       return <DirectorDashboard user={user as any} onLogout={handleLogout} />;
+    }
+
+    if (user.role === 'secretario') {
+      return <SecretarioDashboard user={user as any} onLogout={handleLogout} />;
+    }
+
+    if (user.role === 'alcaldesa') {
+      return <AlcaldesaDashboard user={user as any} onLogout={handleLogout} />;
     }
 
     return (
@@ -257,7 +267,7 @@ const DashboardPage = () => {
   return (
     <div className="flex min-h-screen bg-gray-50/50 overflow-hidden">
       {/* Mini Sidebar - Hidden for roles with their own sidebar */}
-      {user.role !== 'consejo_comunal' && user.role !== 'comuna' && user.role !== 'sala_autogobierno' && user.role !== 'director' && (
+      {user.role !== 'consejo_comunal' && user.role !== 'comuna' && user.role !== 'sala_autogobierno' && user.role !== 'director' && user.role !== 'secretario' && user.role !== 'alcaldesa' && (
         <aside className="w-64 shrink-0 border-r border-gray-100 bg-white p-6 hidden lg:flex flex-col">
           <div className="mb-10 flex items-center gap-3 px-2">
              <div className="h-8 w-8 rounded-lg bg-brand-primary flex items-center justify-center text-white">
@@ -294,7 +304,7 @@ const DashboardPage = () => {
       <main className="flex-1 h-screen overflow-y-auto">
         <div className={cn(
           "mx-auto p-0 lg:p-0 h-full",
-          (user.role !== 'consejo_comunal' && user.role !== 'comuna' && user.role !== 'sala_autogobierno' && user.role !== 'director') ? "max-w-[1600px] p-8 lg:p-12" : ""
+          (user.role !== 'consejo_comunal' && user.role !== 'comuna' && user.role !== 'sala_autogobierno' && user.role !== 'director' && user.role !== 'secretario' && user.role !== 'alcaldesa') ? "max-w-[1600px] p-8 lg:p-12" : ""
         )}>
           <AnimatePresence mode="wait">
             <motion.div

@@ -132,6 +132,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           phone: '0412-3333333',
           createdAt: new Date().toISOString(),
         };
+      } else if (email === 'sec@carrizal.gob.ve') {
+        mockUser = {
+          id: 'sec_1',
+          email,
+          role: 'secretario',
+          firstName: 'Luis',
+          lastName: 'Aponte',
+          cedula: 'V-15151515',
+          phone: '0414-9999999',
+          createdAt: new Date().toISOString(),
+        };
       } else if (email === 'digitalizacion@carrizal.gob.ve') {
         mockUser = {
           id: 'dir_4',
