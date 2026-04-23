@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   LayoutDashboard, 
   Map as MapIcon, 
@@ -36,6 +36,7 @@ import {
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../../../lib/utils';
 import { DirectorData, DirectorType } from '../../../types';
+import { DashboardNavbar } from '../common/DashboardNavbar';
 import { 
   BarChart, 
   Bar, 
@@ -104,9 +105,9 @@ const CIRCUIT_STATS = [
 ];
 
 export const DirectorDashboard: React.FC<{ user: DirectorData; onLogout: () => void }> = ({ user, onLogout }) => {
-  const [collapsed, setCollapsed] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [activeTab, setActiveTab] = useState('dashboard');
-  const [expandedItems, setExpandedItems] = useState<string[]>(['gestion']);
+  const [expandedItems, setExpandedItems] = useState<string[]>(['gestion', 'seguimiento', 'planificacion']);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const toggleExpand = (id: string) => {
@@ -114,6 +115,68 @@ export const DirectorDashboard: React.FC<{ user: DirectorData; onLogout: () => v
       prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
     );
   };
+
+  // Handle responsiveness
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth < 1024) {
+        setIsSidebarOpen(false);
+      } else {
+        setIsSidebarOpen(true);
+      }
+    };
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  const menuGroups = [
+    {
+      label: "Territorial",
+      items: [
+        { id: 'dashboard', label: 'Panel de Control', icon: LayoutDashboard },
+        { 
+          id: 'gestion', 
+          label: 'Gestión Territorial', 
+          icon: MapPin,
+          children: [
+            { id: 'mapa', label: 'Mapa de Acción' },
+            { id: 'validacion', label: 'Bandeja de Validación' },
+          ]
+        },
+      ]
+    },
+    {
+      label: "Seguimiento",
+      items: [
+        { 
+          id: 'seguimiento', 
+          label: 'Seguimiento y Control', 
+          icon: TrendingUp,
+          children: [
+            { id: 'nudos', label: 'Nudos Críticos (7T)' },
+            { id: 'censo', label: 'Censo Sectorizado' },
+          ]
+        },
+        { 
+          id: 'planificacion', 
+          label: 'Planificación', 
+          icon: Calendar,
+          children: [
+            { id: 'cronograma', label: 'Cronograma' },
+            { id: 'directrices', label: 'Directrices' },
+          ]
+        },
+      ]
+    },
+    {
+      label: "Comunicación",
+      items: [
+        { id: 'reportes', label: 'Reportes y Estadísticas', icon: BarChart3 },
+        { id: 'mensajeria', label: 'Mensajería Comunal', icon: MessageSquare },
+      ]
+    }
+  ];
 
   const getDirectorTitle = (type: DirectorType) => {
     switch (type) {
@@ -149,99 +212,164 @@ export const DirectorDashboard: React.FC<{ user: DirectorData; onLogout: () => v
   };
 
   return (
-    <div className="flex h-screen bg-[#F8FAFC]">
-      {/* Mobile Header */}
-      <div className="lg:hidden fixed top-0 left-0 right-0 h-16 bg-white border-b border-gray-200 z-50 flex items-center justify-between px-4">
-        <div className="flex items-center gap-3">
-          <Menu className="w-6 h-6 text-gray-600" onClick={() => setIsMobileMenuOpen(true)} />
-          <span className="font-bold text-gray-900 tracking-tight">GESTIÓN DIRECTIVA</span>
-        </div>
-        <div className="w-10 h-10 rounded-full bg-brand-primary/10 flex items-center justify-center">
-          <ShieldCheck className="w-6 h-6 text-brand-primary" />
-        </div>
-      </div>
-
-      {/* Sidebar Overlay (Mobile) */}
+    <div className="flex h-screen bg-[#fcfdfe] font-sans">
+      {/* Sidebar Overlay Mobile */}
       <AnimatePresence>
         {isMobileMenuOpen && (
-          <>
-            <motion.div 
-              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              onClick={() => setIsMobileMenuOpen(false)}
-              className="fixed inset-0 bg-black/50 z-50 lg:hidden"
-            />
-            <motion.div 
-              initial={{ x: -280 }} animate={{ x: 0 }} exit={{ x: -280 }}
-              className="fixed top-0 left-0 bottom-0 w-[280px] bg-white z-50 lg:hidden flex flex-col"
-            >
-              <SidebarContent 
-                user={user} 
-                collapsed={false} 
-                activeTab={activeTab} 
-                setActiveTab={(id) => { setActiveTab(id); setIsMobileMenuOpen(false); }}
-                expandedItems={expandedItems}
-                toggleExpand={toggleExpand}
-                onLogout={onLogout}
-                getDirectorTitle={getDirectorTitle}
-              />
-            </motion.div>
-          </>
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setIsMobileMenuOpen(false)}
+            className="fixed inset-0 z-40 bg-slate-900/40 backdrop-blur-sm lg:hidden"
+          />
         )}
       </AnimatePresence>
 
-      {/* Desktop Sidebar */}
-      <div className={cn(
-        "hidden lg:flex flex-col bg-white border-r border-[#E2E8F0] transition-all duration-300 relative",
-        collapsed ? "w-[80px]" : "w-[320px]"
-      )}>
-        <SidebarContent 
-          user={user} 
-          collapsed={collapsed} 
-          activeTab={activeTab} 
-          setActiveTab={setActiveTab}
-          expandedItems={expandedItems}
-          toggleExpand={toggleExpand}
-          onLogout={onLogout}
-          getDirectorTitle={getDirectorTitle}
-        />
-        <button 
-          onClick={() => setCollapsed(!collapsed)}
-          className="absolute -right-3 top-1/2 -translate-y-1/2 w-6 h-12 bg-white border border-[#E2E8F0] rounded-lg flex items-center justify-center hover:bg-gray-50 transition-colors z-20 shadow-sm"
-        >
-          {collapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
-        </button>
-      </div>
+      {/* Sidebar */}
+      <motion.aside
+        animate={{ 
+          width: isSidebarOpen ? 320 : 80,
+        }}
+        className={cn(
+          "fixed lg:relative inset-y-0 left-0 bg-white border-r border-slate-100 text-slate-900 z-50 flex flex-col transition-all duration-300",
+          !isSidebarOpen && "items-center",
+          isMobileMenuOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
+        )}
+      >
+        <div className="p-6 flex items-center justify-between border-b border-gray-50 shrink-0">
+          <div className={cn("flex items-center gap-3 overflow-hidden transition-all", !isSidebarOpen && "lg:hidden")}>
+            <div className="h-10 w-10 bg-brand-primary rounded-xl flex items-center justify-center shrink-0 shadow-lg shadow-brand-primary/20">
+              <ShieldCheck className="text-white w-6 h-6" />
+            </div>
+            <div>
+              <h1 className="font-black text-lg tracking-tighter leading-none text-slate-900 uppercase">GESTIÓN</h1>
+              <p className="text-[9px] text-brand-primary font-bold uppercase tracking-widest mt-1">Carrizal Participa</p>
+            </div>
+          </div>
+          <button 
+            onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+            className="p-2 -mr-2 rounded-xl hover:bg-gray-50 flex items-center justify-center transition-colors"
+          >
+            <Menu className="h-5 w-5 text-slate-500" />
+          </button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto py-6 px-3 space-y-6 custom-scrollbar">
+          {menuGroups.map((group, gIdx) => (
+            <div key={gIdx} className="space-y-1">
+              {group.label && isSidebarOpen && (
+                <p className="px-3 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3">
+                  {group.label}
+                </p>
+              )}
+              {group.items.map((item) => {
+                const isActive = activeTab === item.id || (item.children && item.children.some(c => c.id === activeTab));
+                return (
+                  <div key={item.id}>
+                    <button
+                      onClick={() => {
+                        if (item.children) toggleExpand(item.id);
+                        else {
+                          setActiveTab(item.id);
+                          if (window.innerWidth < 1024) setIsMobileMenuOpen(false);
+                        }
+                      }}
+                      className={cn(
+                        "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all relative group",
+                        isActive
+                          ? "bg-brand-primary/10 text-brand-primary" 
+                          : "text-slate-500 hover:bg-gray-50 hover:text-slate-800"
+                      )}
+                    >
+                      <item.icon 
+                        className={cn(
+                          "h-5 w-5 shrink-0 transition-transform group-hover:scale-110", 
+                          isActive ? "text-brand-primary" : "text-slate-400"
+                        )} 
+                      />
+                      {isSidebarOpen && (
+                        <span className="truncate flex-1 text-left">{item.label}</span>
+                      )}
+                      {isSidebarOpen && item.children && (
+                        <ChevronDown className={cn("transition-transform duration-300 opacity-50", expandedItems.includes(item.id) ? "rotate-180" : "")} size={14} />
+                      )}
+                      {isActive && isSidebarOpen && (
+                        <motion.div
+                          layoutId="activeNavDirector"
+                          className="ml-auto w-1 h-4 rounded-full bg-brand-primary"
+                        />
+                      )}
+                    </button>
+                    
+                    {isSidebarOpen && item.children && expandedItems.includes(item.id) && (
+                      <div className="mt-1 ml-9 space-y-1 border-l-2 border-brand-primary/5 pl-3 py-1">
+                        {item.children.map(child => (
+                          <button
+                            key={child.id}
+                            onClick={() => {
+                              setActiveTab(child.id);
+                              if (window.innerWidth < 1024) setIsMobileMenuOpen(false);
+                            }}
+                            className={cn(
+                              "w-full text-left px-3 py-2 text-[10px] font-bold uppercase tracking-wider rounded-lg transition-all",
+                              activeTab === child.id 
+                                ? "text-brand-primary bg-brand-primary/5" 
+                                : "text-slate-400 hover:text-slate-900 hover:bg-slate-50"
+                            )}
+                          >
+                            {child.label}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          ))}
+        </div>
+
+        <div className="p-4 border-t border-slate-50 space-y-2">
+          {isSidebarOpen && (
+            <div className="flex flex-col gap-1 px-3 mb-4">
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{getDirectorTitle(user.directorType)}</p>
+              <p className="text-xs font-bold text-slate-800">{user.firstName} {user.lastName}</p>
+            </div>
+          )}
+          <button 
+            onClick={onLogout}
+            className={cn(
+              "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all",
+              "text-rose-500 hover:bg-rose-50 hover:text-rose-600",
+              !isSidebarOpen && "justify-center"
+            )}
+          >
+            <LogOut size={20} className={cn(!isSidebarOpen && "mx-auto")} />
+            {isSidebarOpen && <span>Cerrar Sesión</span>}
+          </button>
+        </div>
+      </motion.aside>
 
       {/* Main Content */}
-      <main className="flex-1 overflow-y-auto pt-16 lg:pt-0">
-        <header className="hidden lg:flex h-16 bg-white border-b border-[#E2E8F0] items-center justify-between px-8 sticky top-0 z-10 font-sans">
-          <div className="flex items-center gap-4">
-             <div className="bg-gray-50 px-3 py-1 rounded-full border border-gray-100 flex items-center gap-2">
-                <Filter size={14} className="text-gray-400" />
-                <select className="bg-transparent text-[10px] font-bold text-gray-600 uppercase tracking-widest outline-none cursor-pointer">
-                  <option>Todos los Circuitos</option>
-                  <option>Circuito 1</option>
-                  <option>Circuito 2</option>
-                </select>
-             </div>
-          </div>
-          <div className="flex items-center gap-6">
-             <button className="relative p-2 text-gray-400 hover:text-brand-primary transition-colors">
-                <Bell size={20} />
-                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white" />
-             </button>
-             <div className="h-8 w-px bg-gray-200" />
-             <div className="flex items-center gap-3">
-                <div className="text-right">
-                  <p className="text-xs font-bold text-gray-900 leading-none">{user.firstName} {user.lastName}</p>
-                  <p className="text-[10px] text-brand-primary font-bold uppercase mt-1 tracking-tighter">Director</p>
-                </div>
-                <div className="w-10 h-10 rounded-xl bg-brand-primary/5 flex items-center justify-center text-brand-primary font-bold border border-brand-primary/10">
-                  {user.firstName[0]}{user.lastName[0]}
-                </div>
-             </div>
-          </div>
-        </header>
+      <main className="flex-1 overflow-y-auto overflow-x-hidden pt-16 lg:pt-0">
+        <DashboardNavbar 
+          user={user}
+          title={getDirectorTitle(user.directorType)}
+          subtitle="GESTIÓN DIRECTIVA Y SEGUIMIENTO"
+          onMobileMenuOpen={() => setIsMobileMenuOpen(true)}
+          roleIcon={<ShieldCheck size={24} />}
+          actions={
+            <div className="bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-200 flex items-center gap-2 hover:border-brand-primary/30 transition-all">
+              <Filter size={14} className="text-slate-400" />
+              <select className="bg-transparent text-[10px] font-bold text-slate-600 uppercase tracking-widest outline-none cursor-pointer">
+                <option>Todos los Circuitos</option>
+                <option>Circuito 1</option>
+                <option>Circuito 2</option>
+              </select>
+            </div>
+          }
+        />
 
         <div className="p-4 lg:p-8">
           {renderContent()}

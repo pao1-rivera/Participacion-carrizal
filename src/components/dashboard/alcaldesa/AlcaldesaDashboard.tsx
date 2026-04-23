@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   LayoutDashboard, 
   Map as MapIcon, 
@@ -36,6 +36,7 @@ import {
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../../../lib/utils';
 import { UserBase } from '../../../types';
+import { DashboardNavbar } from '../common/DashboardNavbar';
 import { 
   BarChart, 
   Bar, 
@@ -115,7 +116,7 @@ const INVESTMENT_BY_CIRCUIT = [
 ];
 
 export const AlcaldesaDashboard: React.FC<{ user: UserBase; onLogout: () => void }> = ({ user, onLogout }) => {
-  const [collapsed, setCollapsed] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [activeTab, setActiveTab] = useState('dashboard');
   const [expandedItems, setExpandedItems] = useState<string[]>(['geopolitica', 'gestion_proyectos', 'radar_social']);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -125,6 +126,69 @@ export const AlcaldesaDashboard: React.FC<{ user: UserBase; onLogout: () => void
       prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
     );
   };
+
+  // Handle responsiveness
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth < 1024) {
+        setIsSidebarOpen(false);
+      } else {
+        setIsSidebarOpen(true);
+      }
+    };
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  const menuGroups = [
+    {
+      label: "Estratégico",
+      items: [
+        { id: 'dashboard', label: 'Monitor Municipal', icon: LayoutDashboard },
+        { 
+          id: 'geopolitica', 
+          label: 'Geopolítica Comunal', 
+          icon: Globe,
+          children: [
+            { id: 'mapa_interactivo', label: 'Mapa Interactivo' },
+            { id: 'zonas_atencion', label: 'Zonas de Atención' },
+          ]
+        },
+      ]
+    },
+    {
+      label: "Gestión",
+      items: [
+        { id: 'las_7t', label: 'Las 7 Transformaciones', icon: Target },
+        { 
+          id: 'gestion_proyectos', 
+          label: 'Proyectos e Inversión', 
+          icon: Briefcase,
+          children: [
+            { id: 'por_aprobar', label: 'Por Aprobar' },
+            { id: 'en_ejecucion', label: 'En Ejecución' },
+            { id: 'impacto_inversion', label: 'Impacto de Inversión' },
+          ]
+        },
+      ]
+    },
+    {
+      label: "Social",
+      items: [
+        { 
+          id: 'radar_social', 
+          label: 'Radar Social', 
+          icon: Heart,
+          children: [
+            { id: 'adulto_mayor', label: 'Adulto Mayor' },
+            { id: 'salud_emergencias', label: 'Salud y Emergencias' },
+          ]
+        },
+        { id: 'rendicion', label: 'Rendición de Cuentas', icon: FileCheck },
+      ]
+    }
+  ];
 
   const renderContent = () => {
     switch (activeTab) {
@@ -154,142 +218,148 @@ export const AlcaldesaDashboard: React.FC<{ user: UserBase; onLogout: () => void
       {/* Sidebar - Executive Style (Light version per user request) */}
       <motion.aside
         animate={{ 
-          width: collapsed ? 88 : 340,
+          width: isSidebarOpen ? 320 : 80,
         }}
         className={cn(
-          "fixed lg:relative inset-y-0 left-0 bg-white border-r border-slate-100 text-slate-900 z-50 flex flex-col transition-all duration-500",
-          collapsed ? "items-center" : ""
+          "fixed lg:relative inset-y-0 left-0 bg-white border-r border-slate-100 text-slate-900 z-50 flex flex-col transition-all duration-300",
+          !isSidebarOpen && "items-center",
+          isMobileMenuOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         )}
       >
-        <div className="p-8 pb-12 flex items-center gap-4 border-b border-slate-50">
-           <div className="h-12 w-12 bg-brand-primary rounded-2xl flex items-center justify-center shrink-0 shadow-lg shadow-brand-primary/20">
-              <Building2 className="text-white w-7 h-7" />
-           </div>
-           {!collapsed && (
-              <div>
-                 <h1 className="font-black text-2xl tracking-tighter leading-none text-slate-900">ALCALDÍA</h1>
-                 <p className="text-[10px] text-brand-primary font-bold uppercase tracking-[0.3em] mt-1.5 italic">Gestión Carrizal</p>
-              </div>
-           )}
+        <div className="p-6 flex items-center justify-between border-b border-gray-50 shrink-0">
+          <div className={cn("flex items-center gap-3 overflow-hidden transition-all", !isSidebarOpen && "lg:hidden")}>
+             <div className="h-10 w-10 bg-brand-primary rounded-xl flex items-center justify-center shrink-0 shadow-lg shadow-brand-primary/20">
+                <Building2 className="text-white w-6 h-6" />
+             </div>
+             <div>
+                <h1 className="font-black text-lg tracking-tighter leading-none text-slate-900 uppercase">ALCALDÍA</h1>
+                <p className="text-[9px] text-brand-primary font-bold uppercase tracking-widest mt-1">Carrizal Participa</p>
+             </div>
+          </div>
+          <button 
+            onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+            className="p-2 -mr-2 rounded-xl hover:bg-gray-50 flex items-center justify-center transition-colors"
+          >
+            <Menu className="h-5 w-5 text-slate-500" />
+          </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto py-8 px-6 space-y-2 custom-scrollbar">
-           {ALC_NAV_ITEMS.map((item) => {
-             const isActive = activeTab === item.id || (item.children && item.children.some(c => c.id === activeTab));
-             return (
-               <div key={item.id}>
-                  <button
-                    onClick={() => {
-                      if (item.children) toggleExpand(item.id);
-                      else setActiveTab(item.id);
-                    }}
-                    className={cn(
-                      "w-full flex items-center gap-4 px-4 py-3.5 rounded-2xl transition-all relative group",
-                      isActive
-                        ? "bg-brand-primary/10 text-brand-primary" 
-                        : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
-                    )}
-                  >
-                    <item.icon size={22} className={cn("shrink-0", isActive ? "text-brand-primary" : "text-slate-400")} />
-                    {!collapsed && (
-                      <span className="font-bold text-[13px] tracking-tight flex-1 text-left uppercase">{item.label}</span>
-                    )}
-                    {!collapsed && item.children && (
-                      <ChevronDown className={cn("transition-transform duration-300", expandedItems.includes(item.id) ? "rotate-180" : "")} size={16} />
-                    )}
-                    {isActive && !collapsed && (
-                      <motion.div
-                        layoutId="activeNavAlcaldesa"
-                        className="ml-auto w-1 h-5 rounded-full bg-brand-primary"
+        <div className="flex-1 overflow-y-auto py-6 px-3 space-y-6 custom-scrollbar">
+          {menuGroups.map((group, gIdx) => (
+            <div key={gIdx} className="space-y-1">
+              {group.label && isSidebarOpen && (
+                <p className="px-3 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3">
+                  {group.label}
+                </p>
+              )}
+              {group.items.map((item) => {
+                const isActive = activeTab === item.id || (item.children && item.children.some(c => c.id === activeTab));
+                return (
+                  <div key={item.id}>
+                    <button
+                      onClick={() => {
+                        if (item.children) toggleExpand(item.id);
+                        else {
+                          setActiveTab(item.id);
+                          if (window.innerWidth < 1024) setIsMobileMenuOpen(false);
+                        }
+                      }}
+                      className={cn(
+                        "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all relative group",
+                        isActive
+                          ? "bg-brand-primary/10 text-brand-primary" 
+                          : "text-slate-500 hover:bg-gray-50 hover:text-slate-800"
+                      )}
+                    >
+                      <item.icon 
+                        className={cn(
+                          "h-5 w-5 shrink-0 transition-transform group-hover:scale-110", 
+                          isActive ? "text-brand-primary" : "text-slate-400"
+                        )} 
                       />
+                      {isSidebarOpen && (
+                        <span className="truncate flex-1 text-left">{item.label}</span>
+                      )}
+                      {isSidebarOpen && item.children && (
+                        <ChevronDown className={cn("transition-transform duration-300 opacity-50", expandedItems.includes(item.id) ? "rotate-180" : "")} size={14} />
+                      )}
+                      {isActive && isSidebarOpen && (
+                        <motion.div
+                          layoutId="activeNavAlcaldesa"
+                          className="ml-auto w-1 h-4 rounded-full bg-brand-primary"
+                        />
+                      )}
+                    </button>
+                    
+                    {isSidebarOpen && item.children && expandedItems.includes(item.id) && (
+                      <div className="mt-1 ml-9 space-y-1 border-l-2 border-brand-primary/5 pl-3 py-1">
+                        {item.children.map(child => (
+                          <button
+                            key={child.id}
+                            onClick={() => {
+                              setActiveTab(child.id);
+                              if (window.innerWidth < 1024) setIsMobileMenuOpen(false);
+                            }}
+                            className={cn(
+                              "w-full text-left px-3 py-2 text-[10px] font-bold uppercase tracking-wider rounded-lg transition-all",
+                              activeTab === child.id 
+                                ? "text-brand-primary bg-brand-primary/5" 
+                                : "text-slate-400 hover:text-slate-900 hover:bg-slate-50"
+                            )}
+                          >
+                            {child.label}
+                          </button>
+                        ))}
+                      </div>
                     )}
-                  </button>
-                  
-                  {!collapsed && item.children && expandedItems.includes(item.id) && (
-                    <div className="mt-2 ml-10 space-y-1 border-l border-slate-100 pl-4">
-                      {item.children.map(child => (
-                        <button
-                          key={child.id}
-                          onClick={() => setActiveTab(child.id)}
-                          className={cn(
-                            "w-full text-left px-4 py-2 text-[11px] font-black uppercase tracking-wider rounded-xl transition-all",
-                            activeTab === child.id 
-                              ? "text-brand-primary bg-brand-primary/5" 
-                              : "text-slate-400 hover:text-slate-900 hover:bg-slate-50"
-                          )}
-                        >
-                          {child.label}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-               </div>
-             );
-           })}
+                  </div>
+                );
+              })}
+            </div>
+          ))}
         </div>
 
-        <div className="p-8 border-t border-slate-50 space-y-4">
-           <button 
-             onClick={onLogout}
-             className={cn(
-               "w-full flex items-center gap-4 px-4 py-4 rounded-2xl text-slate-500 hover:bg-rose-50 hover:text-rose-600 transition-all font-bold text-sm",
-               collapsed && "justify-center"
-             )}
-           >
-             <LogOut size={22} strokeWidth={2.5} />
-             {!collapsed && <span>Finalizar Gestión</span>}
-           </button>
+        <div className="p-4 border-t border-slate-50 space-y-2">
+          {isSidebarOpen && (
+            <div className="flex flex-col gap-1 px-3 mb-4">
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Alcaldesa</p>
+              <p className="text-xs font-bold text-slate-800">{user.firstName} {user.lastName}</p>
+            </div>
+          )}
+          <button 
+            onClick={onLogout}
+            className={cn(
+              "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all",
+              "text-rose-500 hover:bg-rose-50 hover:text-rose-600",
+              !isSidebarOpen && "justify-center"
+            )}
+          >
+            <LogOut size={20} className={cn(!isSidebarOpen && "mx-auto")} />
+            {isSidebarOpen && <span>Finalizar Gestión</span>}
+          </button>
         </div>
-
-        <button 
-          onClick={() => setCollapsed(!collapsed)}
-          className="absolute -right-3 top-24 w-6 h-12 bg-white rounded-lg border border-slate-200 hidden lg:flex items-center justify-center text-slate-900 shadow-xl z-50 hover:bg-slate-50 transition-colors"
-        >
-          {collapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
-        </button>
       </motion.aside>
 
       {/* Main Execution Content */}
       <main className="flex-1 flex flex-col overflow-hidden">
-         {/* Top Executive Header */}
-         <header className="h-24 bg-white border-b border-slate-100 flex items-center justify-between px-10 sticky top-0 z-40 shrink-0">
-            <div className="flex flex-col">
-               <h2 className="text-xl font-black text-slate-900 italic tracking-tighter leading-none uppercase">Monitor Municipal 360°</h2>
-               <p className="text-[10px] text-brand-primary font-bold tracking-[0.3em] mt-2 uppercase">Dra. Morales | Alcaldía de Carrizal</p>
+        <DashboardNavbar 
+          user={user}
+          title="Monitor Municipal 360°"
+          subtitle={`Dra. Morales | ${user.vinculoAdministrativo}`}
+          onMobileMenuOpen={() => setIsMobileMenuOpen(true)}
+          roleIcon={<Building2 size={24} />}
+          actions={
+            <div className="hidden xl:flex items-center gap-3 bg-slate-50 border border-slate-100 px-5 py-2.5 rounded-2xl">
+              <div className="text-right">
+                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Corte de Reporte</p>
+                 <p className="text-xs font-black text-slate-900 tracking-tight leading-none">22 de Abril, 2026</p>
+              </div>
+              <Clock className="text-slate-300 w-8 h-8" strokeWidth={1.5} />
             </div>
+          }
+        />
 
-            <div className="flex items-center gap-8">
-               <div className="hidden xl:flex items-center gap-3 bg-slate-50 border border-slate-100 px-5 py-2.5 rounded-2xl">
-                  <div className="text-right">
-                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Corte de Reporte</p>
-                     <p className="text-xs font-black text-slate-900 tracking-tight leading-none">22 de Abril, 2026</p>
-                  </div>
-                  <Clock className="text-slate-300 w-8 h-8" strokeWidth={1.5} />
-               </div>
-
-               <div className="flex items-center gap-4">
-                  <div className="relative">
-                    <button className="w-12 h-12 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400 hover:text-brand-primary hover:bg-brand-primary/5 transition-all relative shadow-sm">
-                       <Bell size={24} />
-                       <div className="absolute -top-1 -right-1 w-5 h-5 bg-rose-500 rounded-full border-2 border-white flex items-center justify-center">
-                          <span className="text-[8px] font-black text-white">3</span>
-                       </div>
-                    </button>
-                  </div>
-                  <div className="flex items-center gap-4 pl-4 border-l border-slate-100">
-                     <div className="text-right">
-                        <p className="text-sm font-black text-slate-900 tracking-tighter leading-none">Dra. Morales</p>
-                        <p className="text-[10px] text-brand-primary font-bold uppercase mt-1 tracking-widest leading-none">Alcaldesa</p>
-                     </div>
-                     <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-slate-200 to-slate-300 border-2 border-white shadow-xl overflow-hidden">
-                        <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=alcaldesa" alt="Alcaldesa" />
-                     </div>
-                  </div>
-               </div>
-            </div>
-         </header>
-
-         {/* Content Display */}
+        {/* Content Display */}
          <div className="flex-1 overflow-y-auto p-10 custom-scrollbar">
             <AnimatePresence mode="wait">
                {renderContent()}

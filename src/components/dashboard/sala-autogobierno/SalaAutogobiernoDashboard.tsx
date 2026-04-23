@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   LayoutDashboard, 
   Map as MapIcon, 
@@ -38,6 +38,7 @@ import {
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../../../lib/utils';
 import { SalaAutogobiernoData } from '../../../types';
+import { DashboardNavbar } from '../common/DashboardNavbar';
 import { 
   BarChart, 
   Bar, 
@@ -126,9 +127,9 @@ const T7_INDICATORS = [
 ];
 
 export const SalaAutogobiernoDashboard: React.FC<{ user: SalaAutogobiernoData; onLogout: () => void }> = ({ user, onLogout }) => {
-  const [collapsed, setCollapsed] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [activeTab, setActiveTab] = useState('dashboard');
-  const [expandedItems, setExpandedItems] = useState<string[]>(['sistematizacion']);
+  const [expandedItems, setExpandedItems] = useState<string[]>(['sistematizacion', 'organizaciones', 'planificacion']);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const toggleExpand = (id: string) => {
@@ -136,6 +137,87 @@ export const SalaAutogobiernoDashboard: React.FC<{ user: SalaAutogobiernoData; o
       prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
     );
   };
+
+  // Handle responsiveness
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth < 1024) {
+        setIsSidebarOpen(false);
+      } else {
+        setIsSidebarOpen(true);
+      }
+    };
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  const menuGroups = [
+    {
+      label: "Territorial",
+      items: [
+        { id: 'dashboard', label: 'Panel de Control', icon: LayoutDashboard },
+        { 
+          id: 'sistematizacion', 
+          label: 'Gestión de las 7T', 
+          icon: ClipboardCheck,
+          children: [
+            { id: 't1', label: 'T1 - Económica' },
+            { id: 't2', label: 'T2 - Servicios' },
+            { id: 't3', label: 'T3 - Seguridad' },
+            { id: 't4', label: 'T4 - Social' },
+            { id: 't5', label: 'T5 - Política' },
+            { id: 't6', label: 'T6 - Ecología' },
+            { id: 't7', label: 'T7 - Geopolítica' },
+          ]
+        },
+      ]
+    },
+    {
+      label: "Red Social",
+      items: [
+        { 
+          id: 'organizaciones', 
+          label: 'Red de Organizaciones', 
+          icon: Users,
+          children: [
+            { id: 'comunas', label: 'Comunas del Eje' },
+            { id: 'consejos', label: 'Consejos Comunales' },
+          ]
+        },
+      ]
+    },
+    {
+      label: "Estratégico",
+      items: [
+        { 
+          id: 'planificacion', 
+          label: 'Planificación Estratégica', 
+          icon: MapIcon,
+          children: [
+            { id: 'aca', label: 'ACA Territorial' },
+            { id: 'suenos', label: 'Mapa de los Sueños' },
+          ]
+        },
+        { 
+          id: 'seguimiento', 
+          label: 'Seguimiento de Gestión', 
+          icon: TrendingUp,
+          children: [
+            { id: 'proyectos', label: 'Proyectos en Ejecución' },
+            { id: 'evidencias', label: 'Banco de Evidencias' },
+          ]
+        },
+      ]
+    },
+    {
+      label: "Soporte",
+      items: [
+        { id: 'comunicaciones', label: 'Comunicaciones', icon: MessageSquare },
+        { id: 'soporte', label: 'Soporte Técnico', icon: Settings },
+      ]
+    }
+  ];
 
   const renderContent = () => {
     switch (activeTab) {
@@ -159,99 +241,160 @@ export const SalaAutogobiernoDashboard: React.FC<{ user: SalaAutogobiernoData; o
   };
 
   return (
-    <div className="flex h-screen bg-[#F8FAFC]">
-      {/* Mobile Header */}
-      <div className="lg:hidden fixed top-0 left-0 right-0 h-16 bg-white border-b border-gray-200 z-50 flex items-center justify-between px-4">
-        <div className="flex items-center gap-3">
-          <Menu 
-            className="w-6 h-6 text-gray-600" 
-            onClick={() => setIsMobileMenuOpen(true)}
-          />
-          <span className="font-bold text-gray-900 tracking-tight">SALA DIGITAL</span>
-        </div>
-        <div className="w-10 h-10 rounded-full bg-brand-primary/10 flex items-center justify-center overflow-hidden">
-          <Users className="w-6 h-6 text-brand-primary" />
-        </div>
-      </div>
-
-      {/* Sidebar Overlay */}
+    <div className="flex h-screen bg-[#fcfdfe] font-sans">
+      {/* Sidebar Overlay Mobile */}
       <AnimatePresence>
         {isMobileMenuOpen && (
-          <>
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setIsMobileMenuOpen(false)}
-              className="fixed inset-0 bg-black/50 z-50 lg:hidden"
-            />
-            <motion.div 
-              initial={{ x: -280 }}
-              animate={{ x: 0 }}
-              exit={{ x: -280 }}
-              className="fixed top-0 left-0 bottom-0 w-[280px] bg-white z-50 lg:hidden flex flex-col"
-            >
-              <SidebarContent 
-                user={user} 
-                collapsed={false} 
-                activeTab={activeTab} 
-                setActiveTab={(id) => {
-                  setActiveTab(id);
-                  setIsMobileMenuOpen(false);
-                }}
-                expandedItems={expandedItems}
-                toggleExpand={toggleExpand}
-                onLogout={onLogout}
-              />
-            </motion.div>
-          </>
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setIsMobileMenuOpen(false)}
+            className="fixed inset-0 z-40 bg-slate-900/40 backdrop-blur-sm lg:hidden"
+          />
         )}
       </AnimatePresence>
 
-      {/* Desktop Sidebar */}
-      <div className={cn(
-        "hidden lg:flex flex-col bg-white border-r border-[#E2E8F0] transition-all duration-300 relative",
-        collapsed ? "w-[80px]" : "w-[320px]"
-      )}>
-        <SidebarContent 
-          user={user} 
-          collapsed={collapsed} 
-          activeTab={activeTab} 
-          setActiveTab={setActiveTab}
-          expandedItems={expandedItems}
-          toggleExpand={toggleExpand}
-          onLogout={onLogout}
-        />
-        
-        <button 
-          onClick={() => setCollapsed(!collapsed)}
-          className="absolute -right-3 top-1/2 -translate-y-1/2 w-6 h-12 bg-white border border-[#E2E8F0] rounded-lg flex items-center justify-center hover:bg-gray-50 transition-colors z-20 shadow-sm"
-        >
-          {collapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
-        </button>
-      </div>
+      {/* Sidebar */}
+      <motion.aside
+        animate={{ 
+          width: isSidebarOpen ? 320 : 80,
+        }}
+        className={cn(
+          "fixed lg:relative inset-y-0 left-0 bg-white border-r border-slate-100 text-slate-900 z-50 flex flex-col transition-all duration-300",
+          !isSidebarOpen && "items-center",
+          isMobileMenuOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
+        )}
+      >
+        <div className="p-6 flex items-center justify-between border-b border-gray-50 shrink-0">
+          <div className={cn("flex items-center gap-3 overflow-hidden transition-all", !isSidebarOpen && "lg:hidden")}>
+            <div className="h-10 w-10 bg-brand-primary rounded-xl flex items-center justify-center shrink-0 shadow-lg shadow-brand-primary/20">
+              <MapIcon className="text-white w-6 h-6" />
+            </div>
+            <div>
+              <h1 className="font-black text-lg tracking-tighter leading-none text-slate-900 uppercase">SALA DIGITAL</h1>
+              <p className="text-[9px] text-brand-primary font-bold uppercase tracking-widest mt-1">Carrizal Participa</p>
+            </div>
+          </div>
+          <button 
+            onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+            className="p-2 -mr-2 rounded-xl hover:bg-gray-50 flex items-center justify-center transition-colors"
+          >
+            <Menu className="h-5 w-5 text-slate-500" />
+          </button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto py-6 px-3 space-y-6 custom-scrollbar">
+          {menuGroups.map((group, gIdx) => (
+            <div key={gIdx} className="space-y-1">
+              {group.label && isSidebarOpen && (
+                <p className="px-3 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3">
+                  {group.label}
+                </p>
+              )}
+              {group.items.map((item) => {
+                const isActive = activeTab === item.id || (item.children && item.children.some(c => c.id === activeTab));
+                return (
+                  <div key={item.id}>
+                    <button
+                      onClick={() => {
+                        if (item.children) toggleExpand(item.id);
+                        else {
+                          setActiveTab(item.id);
+                          if (window.innerWidth < 1024) setIsMobileMenuOpen(false);
+                        }
+                      }}
+                      className={cn(
+                        "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all relative group",
+                        isActive
+                          ? "bg-brand-primary/10 text-brand-primary" 
+                          : "text-slate-500 hover:bg-gray-50 hover:text-slate-800"
+                      )}
+                    >
+                      <item.icon 
+                        className={cn(
+                          "h-5 w-5 shrink-0 transition-transform group-hover:scale-110", 
+                          isActive ? "text-brand-primary" : "text-slate-400"
+                        )} 
+                      />
+                      {isSidebarOpen && (
+                        <span className="truncate flex-1 text-left">{item.label}</span>
+                      )}
+                      {isSidebarOpen && item.children && (
+                        <ChevronDown className={cn("transition-transform duration-300 opacity-50", expandedItems.includes(item.id) ? "rotate-180" : "")} size={14} />
+                      )}
+                      {isActive && isSidebarOpen && (
+                        <motion.div
+                          layoutId="activeNavSala"
+                          className="ml-auto w-1 h-4 rounded-full bg-brand-primary"
+                        />
+                      )}
+                    </button>
+                    
+                    {isSidebarOpen && item.children && expandedItems.includes(item.id) && (
+                      <div className="mt-1 ml-9 space-y-1 border-l-2 border-brand-primary/5 pl-3 py-1">
+                        {item.children.map(child => (
+                          <button
+                            key={child.id}
+                            onClick={() => {
+                              setActiveTab(child.id);
+                              if (window.innerWidth < 1024) setIsMobileMenuOpen(false);
+                            }}
+                            className={cn(
+                              "w-full text-left px-3 py-2 text-[10px] font-bold uppercase tracking-wider rounded-lg transition-all",
+                              activeTab === child.id 
+                                ? "text-brand-primary bg-brand-primary/5" 
+                                : "text-slate-400 hover:text-slate-900 hover:bg-slate-50"
+                            )}
+                          >
+                            {child.label}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          ))}
+        </div>
+
+        <div className="p-4 border-t border-slate-50 space-y-2">
+          {isSidebarOpen && (
+            <div className="flex flex-col gap-1 px-3 mb-4">
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{user.vinculoAdministrativo}</p>
+              <p className="text-xs font-bold text-slate-800">{user.firstName} {user.lastName}</p>
+            </div>
+          )}
+          <button 
+            onClick={onLogout}
+            className={cn(
+              "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all",
+              "text-rose-500 hover:bg-rose-50 hover:text-rose-600",
+              !isSidebarOpen && "justify-center"
+            )}
+          >
+            <LogOut size={20} className={cn(!isSidebarOpen && "mx-auto")} />
+            {isSidebarOpen && <span>Cerrar Sesión</span>}
+          </button>
+        </div>
+      </motion.aside>
 
       {/* Main Content */}
-      <main className="flex-1 overflow-y-auto pt-16 lg:pt-0">
-        <header className="hidden lg:flex h-16 bg-white border-b border-[#E2E8F0] items-center justify-between px-8 sticky top-0 z-10">
-          <div>
-            <h1 className="text-lg font-semibold text-gray-900 capitalize">
-              {activeTab.replace('-', ' ')}
-            </h1>
-            <p className="text-xs text-gray-500">Gestión Territorial de Autogobierno</p>
-          </div>
-          <div className="flex items-center gap-4">
-             <button className="flex items-center gap-2 px-4 py-2 bg-brand-primary text-white rounded-lg hover:bg-brand-primary/90 transition-all font-medium text-sm shadow-sm">
-                <ClipboardCheck size={18} />
-                Sistematización Semanal
-             </button>
-             <div className="h-8 w-px bg-gray-200" />
-             <div className="text-right flex flex-col items-end">
-                <span className="text-sm font-medium text-gray-900">{user.firstName} {user.lastName}</span>
-                <span className="text-[10px] text-brand-primary uppercase font-bold tracking-widest">{user.vinculoAdministrativo}</span>
-             </div>
-          </div>
-        </header>
+      <main className="flex-1 overflow-y-auto overflow-x-hidden pt-16 lg:pt-0">
+        <DashboardNavbar 
+          user={user}
+          title="Sala de Autogobierno"
+          subtitle="GESTIÓN TERRITORIAL DE PROXIMIDAD"
+          onMobileMenuOpen={() => setIsMobileMenuOpen(true)}
+          roleIcon={<MapIcon size={24} />}
+          actions={
+            <button className="flex items-center gap-2 px-4 py-2 bg-brand-primary text-white rounded-lg hover:bg-brand-primary/90 transition-all font-bold text-xs shadow-sm">
+                <ClipboardCheck size={16} />
+                Sistematización
+            </button>
+          }
+        />
 
         <div className="p-4 lg:p-8">
           {renderContent()}

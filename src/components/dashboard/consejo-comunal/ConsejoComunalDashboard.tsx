@@ -46,6 +46,7 @@ import {
   Camera,
 } from "lucide-react";
 import { cn } from "../../../lib/utils";
+import { DashboardNavbar } from "../common/DashboardNavbar";
 
 // Types for Sections and Navigation
 type Section =
@@ -376,19 +377,13 @@ export const ConsejoComunalDashboard = ({ user }: { user: any }) => {
       <Sidebar />
 
       <main className="flex-1 w-full lg:max-w-[calc(100vw-64px)] overflow-hidden">
-        {/* Mobile Header Nav */}
-        <div className="lg:hidden p-4 flex items-center justify-between border-b border-gray-100 bg-white sticky top-0 z-20">
-          <button
-            onClick={() => setIsMobileMenuOpen(true)}
-            className="p-2 -ml-2 rounded-xl hover:bg-gray-50"
-          >
-            <Menu className="h-6 w-6 text-slate-600" />
-          </button>
-          <h2 className="text-sm font-bold text-slate-900">Consejo Comunal</h2>
-          <div className="h-8 w-8 rounded-full bg-brand-primary/10 flex items-center justify-center text-brand-primary">
-            <Users className="h-4 w-4" />
-          </div>
-        </div>
+        <DashboardNavbar 
+          user={user}
+          title={activeSection.charAt(0).toUpperCase() + activeSection.slice(1)}
+          subtitle={`Vocero: ${user.firstName} | Consejo Comunal`}
+          onMobileMenuOpen={() => setIsMobileMenuOpen(true)}
+          roleIcon={<Users size={24} />}
+        />
 
         <div className="p-4 lg:p-10 max-w-7xl mx-auto space-y-8 pb-32">
           <AnimatePresence mode="wait">
