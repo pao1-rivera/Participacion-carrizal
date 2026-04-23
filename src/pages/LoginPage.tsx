@@ -153,6 +153,13 @@ const LoginPage = () => {
                   </button>
                   <button 
                     type="button" 
+                    onClick={() => { setEmail('sala@carrizal.gob.ve'); setPassword('password'); }}
+                    className="flex-1 py-2 rounded-lg bg-orange-50 text-[9px] font-black uppercase text-orange-500 border border-orange-100 hover:bg-orange-100 transition-colors"
+                  >
+                    Sala
+                  </button>
+                  <button 
+                    type="button" 
                     onClick={() => { setEmail('consejo@test.com'); setPassword('password'); }}
                     className="flex-1 py-2 rounded-lg bg-emerald-50 text-[9px] font-black uppercase text-emerald-500 border border-emerald-100 hover:bg-emerald-100 transition-colors"
                   >

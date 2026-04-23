@@ -33,7 +33,9 @@ import {
   CloudUpload,
   Camera,
   Menu,
-  ChevronDown
+  ChevronDown,
+  MapPin,
+  Send
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../../../lib/utils';
@@ -53,6 +55,7 @@ import {
   AreaChart,
   Area
 } from 'recharts';
+import { X, Send } from 'lucide-react';
 
 interface NavItem {
   id: string;
@@ -131,6 +134,13 @@ export const SalaAutogobiernoDashboard: React.FC<{ user: SalaAutogobiernoData; o
   const [activeTab, setActiveTab] = useState('dashboard');
   const [expandedItems, setExpandedItems] = useState<string[]>(['sistematizacion', 'organizaciones', 'planificacion']);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [modal, setModal] = useState<{ isOpen: boolean; type: 'form' | 'detail' | 'success'; title: string; data?: any }>({ isOpen: false, type: 'detail', title: '' });
+
+  const openModal = (type: 'form' | 'detail' | 'success', title: string, data?: any) => {
+    setModal({ isOpen: true, type, title, data });
+  };
+
+  const closeModal = () => setModal({ ...modal, isOpen: false });
 
   const toggleExpand = (id: string) => {
     setExpandedItems(prev => 
@@ -220,9 +230,27 @@ export const SalaAutogobiernoDashboard: React.FC<{ user: SalaAutogobiernoData; o
   ];
 
   const renderContent = () => {
+    if (activeTab.startsWith('t')) {
+      return <SistematizacionView area={activeTab} openModal={openModal} />;
+    }
+
     switch (activeTab) {
       case 'dashboard':
-        return <DashboardView user={user} />;
+        return <DashboardView user={user} openModal={openModal} />;
+      case 'comunas':
+      case 'consejos':
+      case 'organizaciones':
+        return <OrganizacionesView type={activeTab} openModal={openModal} />;
+      case 'aca':
+      case 'suenos':
+      case 'planificacion':
+        return <PlanificacionEstrategicaView type={activeTab} openModal={openModal} />;
+      case 'proyectos':
+      case 'evidencias':
+      case 'seguimiento':
+        return <SeguimientoGestionView type={activeTab} openModal={openModal} />;
+      case 'comunicaciones':
+        return <ComunicacionesView openModal={openModal} />;
       default:
         return (
           <div className="flex items-center justify-center h-[calc(100vh-120px)]">
@@ -389,7 +417,10 @@ export const SalaAutogobiernoDashboard: React.FC<{ user: SalaAutogobiernoData; o
           onMobileMenuOpen={() => setIsMobileMenuOpen(true)}
           roleIcon={<MapIcon size={24} />}
           actions={
-            <button className="flex items-center gap-2 px-4 py-2 bg-brand-primary text-white rounded-lg hover:bg-brand-primary/90 transition-all font-bold text-xs shadow-sm">
+            <button 
+              onClick={() => openModal('form', 'Nueva Sistematización 7T', { area: activeTab })}
+              className="flex items-center gap-2 px-4 py-2 bg-brand-primary text-white rounded-lg hover:bg-brand-primary/90 transition-all font-bold text-xs shadow-sm"
+            >
                 <ClipboardCheck size={16} />
                 Sistematización
             </button>
@@ -400,6 +431,466 @@ export const SalaAutogobiernoDashboard: React.FC<{ user: SalaAutogobiernoData; o
           {renderContent()}
         </div>
       </main>
+
+      <DashboardModal 
+        isOpen={modal.isOpen} 
+        onClose={closeModal} 
+        type={modal.type} 
+        title={modal.title} 
+        data={modal.data} 
+      />
+    </div>
+  );
+};
+
+const DashboardModal = ({ isOpen, onClose, type, title, data }: { isOpen: boolean, onClose: () => void, type: 'form' | 'detail' | 'success', title: string, data?: any }) => {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        onClick={onClose}
+        className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
+      />
+      
+      <motion.div
+        initial={{ scale: 0.95, opacity: 0, y: 20 }}
+        animate={{ scale: 1, opacity: 1, y: 0 }}
+        className="bg-white rounded-[32px] w-full max-w-xl overflow-hidden shadow-2xl relative z-10 border border-slate-100"
+      >
+        <div className="p-8 border-b border-slate-50 flex items-center justify-between bg-slate-50/50">
+          <div>
+            <span className="text-[10px] font-black text-brand-primary uppercase tracking-[0.2em] mb-1 block leading-none">Módulo de Sala</span>
+            <h3 className="text-xl font-black text-slate-800 uppercase italic leading-none">{title}</h3>
+          </div>
+          <button onClick={onClose} className="p-3 bg-white hover:bg-slate-100 rounded-2xl transition-colors text-slate-400">
+            <X size={20} />
+          </button>
+        </div>
+
+        <div className="p-8 max-h-[60vh] overflow-y-auto custom-scrollbar">
+          {type === 'success' ? (
+            <div className="text-center py-8">
+              <div className="w-20 h-20 bg-emerald-50 text-emerald-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-sm border border-emerald-100">
+                <CheckCircle2 size={40} />
+              </div>
+              <p className="text-slate-600 font-medium italic mb-2">{data?.message || 'Proceso completado exitosamente.'}</p>
+              <p className="text-[10px] text-slate-400 uppercase font-black tracking-widest leading-none mt-4">Sincronizado con Central Regional</p>
+            </div>
+          ) : type === 'detail' ? (
+            <div className="space-y-6">
+               {data && Object.entries(data).map(([key, value]: [string, any]) => (
+                <div key={key} className="p-4 bg-slate-50 rounded-2xl border border-slate-100 shadow-xs">
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-2">{key}</p>
+                  <p className="text-xs font-black text-slate-800 uppercase italic leading-tight">{String(value)}</p>
+                </div>
+               ))}
+            </div>
+          ) : (
+            <form className="space-y-6" onSubmit={(e) => { e.preventDefault(); onClose(); }}>
+               <div className="space-y-4">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block pl-2">Descripción del Avance</label>
+                    <textarea 
+                      className="w-full bg-slate-50 border border-slate-100 rounded-2xl p-4 text-xs font-medium focus:ring-2 focus:ring-brand-primary/20 outline-none min-h-[120px] transition-all italic" 
+                      placeholder="Describa los logros alcanzados en este territorio..."
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                     <div className="space-y-2">
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block pl-2">Fecha de Acción</label>
+                        <input type="date" className="w-full bg-slate-50 border border-slate-100 rounded-xl p-3 text-xs font-medium focus:ring-2 focus:ring-brand-primary/20 outline-none transition-all" />
+                     </div>
+                     <div className="space-y-2">
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block pl-2">Porcentaje de Impacto</label>
+                        <select className="w-full bg-slate-50 border border-slate-100 rounded-xl p-3 text-xs font-medium focus:ring-2 focus:ring-brand-primary/20 outline-none transition-all italic font-bold">
+                           <option>25% - Inicial</option>
+                           <option>50% - Medio</option>
+                           <option>75% - Avanzado</option>
+                           <option>100% - Consolidado</option>
+                        </select>
+                     </div>
+                  </div>
+               </div>
+               <button type="submit" className="w-full py-4 bg-brand-primary text-white rounded-2xl font-black uppercase italic tracking-wider shadow-lg flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98] transition-all">
+                  <Send size={18} /> Enviar a Sistematización Central
+               </button>
+            </form>
+          )}
+        </div>
+      </motion.div>
+    </div>
+  );
+};
+
+const SistematizacionView = ({ area, openModal }: { area: string; openModal: any }) => {
+  const tName = T7_INDICATORS.find(t => t.id === area)?.name || area;
+  return (
+    <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 space-y-6">
+      <div className="flex items-center justify-between mb-2">
+         <div>
+            <h2 className="text-xl font-bold text-slate-900 leading-tight uppercase tracking-tighter">Sistematización: {tName}</h2>
+            <p className="text-xs text-slate-500 italic mt-1 leading-none shadow-xs">Carga de avances territoriales por área política</p>
+         </div>
+         <button 
+          onClick={() => openModal('form', 'Registrar Avance: ' + tName, { area: tName })}
+          className="flex items-center gap-2 px-4 py-2 bg-brand-primary text-white rounded-xl font-bold text-[10px] uppercase shadow-sm"
+        >
+            <Plus size={14} /> Registrar Avance
+         </button>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {[
+          { label: 'Total Reportes', value: '45', color: 'text-brand-primary' },
+          { label: 'Territorios Cubiertos', value: '8/12', color: 'text-indigo-600' },
+          { label: 'Tiempo Prom. Carga', value: '2.4d', color: 'text-emerald-600' },
+          { label: 'Estatus Global', value: '68%', color: 'text-amber-600' },
+        ].map((m, i) => (
+          <div 
+            key={i} 
+            onClick={() => openModal('detail', 'Métrica: ' + m.label, { Valor: m.value, Detalle: 'Información consolidada de la red territorial para el área seleccionada.' })}
+            className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm overflow-hidden relative cursor-pointer hover:border-brand-primary transition-all group"
+          >
+             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-2">{m.label}</p>
+             <p className={cn("text-2xl font-black", m.color)}>{m.value}</p>
+          </div>
+        ))}
+      </div>
+
+      <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
+        <div className="p-6 border-b border-slate-50 flex items-center justify-between">
+           <h3 className="text-xs font-black text-slate-900 uppercase tracking-widest flex items-center gap-2 leading-none">
+              <ClipboardCheck size={16} className="text-brand-primary" />
+              Sistematización por Comunidad
+           </h3>
+        </div>
+        <div className="overflow-x-auto text-slate-900">
+           <table className="w-full text-left">
+              <thead>
+                 <tr className="bg-slate-50/50">
+                    <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest italic">Comunidad</th>
+                    <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest italic text-center">Avance</th>
+                    <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest italic text-center">Última Carga</th>
+                    <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest italic text-right">Acción</th>
+                 </tr>
+              </thead>
+              <tbody>
+                 {[
+                   { name: 'Brisas del Norte', progress: 85, date: '12/05/2024' },
+                   { name: 'El Trigo Sector A', progress: 45, date: '18/05/2024' },
+                   { name: 'Los Picapiedras', progress: 100, date: '10/05/2024' },
+                   { name: 'Colinas de Carrizal', progress: 20, date: '22/05/2024' },
+                 ].map((row, i) => (
+                   <tr 
+                     key={i} 
+                     onClick={() => openModal('detail', 'Resumen Territorial: ' + row.name, row)}
+                     className="border-b border-slate-50 last:border-0 hover:bg-slate-50/50 transition-colors cursor-pointer"
+                   >
+                      <td className="px-8 py-5">
+                         <span className="text-xs font-black text-slate-800 uppercase italic tracking-tight">{row.name}</span>
+                      </td>
+                      <td className="px-8 py-5">
+                         <div className="flex items-center gap-2 max-w-[120px] mx-auto">
+                            <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                               <div className="h-full bg-brand-primary" style={{ width: `${row.progress}%` }} />
+                            </div>
+                            <span className="text-[10px] font-bold text-brand-primary">{row.progress}%</span>
+                         </div>
+                      </td>
+                      <td className="px-8 py-5 text-center">
+                         <span className="text-[10px] font-bold text-slate-600">{row.date}</span>
+                      </td>
+                      <td className="px-8 py-5 text-right">
+                         <button className="text-[10px] font-black text-brand-primary uppercase italic hover:underline">Ver Detalle</button>
+                      </td>
+                   </tr>
+                 ))}
+              </tbody>
+           </table>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const OrganizacionesView = ({ type, openModal }: { type: string; openModal: any }) => {
+  return (
+    <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 space-y-6">
+      <div className="flex items-center justify-between mb-2">
+         <div>
+            <h2 className="text-xl font-bold text-slate-900 leading-tight uppercase tracking-tighter">Directorio: {type === 'comunas' ? 'Comunas' : 'Consejos Comunales'}</h2>
+            <p className="text-xs text-slate-500 italic mt-1 leading-none shadow-xs">Registro y estatus de organizaciones del eje</p>
+         </div>
+         <div className="flex gap-2">
+            <div className="relative">
+               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
+               <input 
+                  type="text" 
+                  placeholder="Buscar organización..." 
+                  className="pl-9 pr-4 py-2 bg-white border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-brand-primary/20 outline-none w-64"
+               />
+            </div>
+            <button className="p-2 border border-slate-200 rounded-xl hover:bg-slate-50 transition-colors text-slate-500">
+               <Filter size={18} />
+            </button>
+         </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {[1, 2, 3, 4, 5, 6].map((i) => (
+          <div 
+             key={i} 
+             onClick={() => openModal('detail', 'Expediente: ' + (type === 'comunas' ? 'Comuna ' : 'CC ') + (i === 1 ? 'Brisas del Norte' : i === 2 ? 'El Despertar' : `Organización Territorial ${i}`), { Estatus: i % 3 === 0 ? 'Vencido' : 'Vigente', Población: 200 + i * 50, Voceros: 12 + i })}
+             className="bg-white rounded-3xl border border-slate-100 shadow-sm p-6 space-y-4 hover:border-brand-primary/30 transition-all group overflow-hidden relative cursor-pointer"
+          >
+             <div className="absolute top-0 right-0 p-4 opacity-[0.03] group-hover:scale-125 transition-transform">
+                <Users size={80} className="text-brand-primary" />
+             </div>
+             <div className="flex justify-between items-start">
+                <div className="w-12 h-12 bg-brand-primary/10 rounded-2xl flex items-center justify-center text-brand-primary">
+                   <Users size={24} />
+                </div>
+                <span className={cn("text-[9px] font-black uppercase px-2 py-0.5 rounded italic", i % 3 === 0 ? 'bg-amber-50 text-amber-600' : 'bg-emerald-50 text-emerald-600')}>
+                   {i % 3 === 0 ? 'Vencido' : 'Vigente'}
+                </span>
+             </div>
+             <div>
+                <h4 className="text-sm font-black text-slate-900 uppercase tracking-tight italic">{type === 'comunas' ? 'Comuna' : 'CC'} {i === 1 ? 'Brisas del Norte' : i === 2 ? 'El Despertar' : `Organización Territorial ${i}`}</h4>
+                <p className="text-[10px] text-slate-500 font-medium">Ubicación: Sector {i}, Vereda {i+10}</p>
+             </div>
+             <div className="pt-4 border-t border-slate-50 grid grid-cols-2 gap-4">
+                <div>
+                   <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest leading-none mb-1">Población</p>
+                   <p className="text-xs font-black text-slate-800 italic">{200 + i * 50} Hab.</p>
+                </div>
+                <div>
+                   <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest leading-none mb-1">Voceros</p>
+                   <p className="text-xs font-black text-slate-800 italic">{12 + i} Activos</p>
+                </div>
+             </div>
+             <button className="w-full py-2 bg-slate-50 text-brand-primary text-[10px] font-black rounded-xl hover:bg-brand-primary hover:text-white transition-all uppercase italic">
+                Ver Expediente Digital
+             </button>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+const PlanificacionEstrategicaView = ({ type, openModal }: { type: string; openModal: any }) => {
+  return (
+    <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 space-y-6">
+       <div className="flex items-center justify-between mb-2">
+         <div>
+            <h2 className="text-xl font-bold text-slate-900 leading-tight uppercase tracking-tighter">{type === 'aca' ? 'ACA Territorial' : 'Mapa de los Sueños'}</h2>
+            <p className="text-xs text-slate-500 italic mt-1 leading-none shadow-xs">Planificación de impacto regional y nudos de gran escala</p>
+         </div>
+         <button 
+          onClick={() => openModal('form', 'Registrar Proyecto Hito', { area: 'Planificación' })}
+          className="flex items-center gap-2 px-4 py-2 bg-brand-primary text-white rounded-xl font-bold text-[10px] uppercase shadow-sm"
+        >
+            <Plus size={14} /> Registrar Proyecto Hito
+         </button>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-8 space-y-6">
+           <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest flex items-center gap-2 leading-none">
+              <Activity size={18} className="text-brand-primary" />
+              Prioridades del ACA (Eje Territorial)
+           </h3>
+           <div className="space-y-4">
+              {[
+                { title: 'Subestación Eléctrica Carrizal', impact: 'Impacto en 4 Comunas', status: 'En Proyecto', percent: 15 },
+                { title: 'Acueducto Matriz Panamericana', impact: 'Soberanía Hídrica Eje Central', status: 'En Ejecución', percent: 45 },
+                { title: 'Complejo Deportivo Regional', impact: 'Juvenil / Recreativo', status: 'Aprobado', percent: 0 },
+              ].map((item, i) => (
+                <div 
+                  key={i} 
+                  onClick={() => openModal('detail', 'Hito Estratégico: ' + item.title, item)}
+                  className="p-4 bg-slate-50 rounded-2xl border border-slate-100 hover:border-brand-primary/30 transition-all cursor-pointer group shadow-xs"
+                >
+                   <div className="flex justify-between mb-2">
+                      <div>
+                        <h4 className="text-xs font-black text-slate-800 uppercase italic">{item.title}</h4>
+                        <p className="text-[10px] text-brand-primary font-bold">{item.impact}</p>
+                      </div>
+                      <span className="text-[10px] font-black text-brand-primary uppercase italic">{item.percent}%</span>
+                   </div>
+                   <div className="h-1.5 w-full bg-slate-200 rounded-full overflow-hidden">
+                      <div className="h-full bg-brand-primary transition-all duration-1000" style={{ width: `${item.percent}%` }} />
+                   </div>
+                </div>
+              ))}
+           </div>
+        </div>
+
+        <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden flex flex-col">
+           <div className="p-8 border-b border-slate-50">
+              <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest flex items-center gap-2 leading-none">
+                <MapIcon size={18} className="text-brand-primary" />
+                Mapa de Hitos (Visión 2030)
+              </h3>
+           </div>
+           <div className="flex-1 min-h-[300px] bg-slate-900 relative">
+              <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-30" />
+              <div className="absolute top-[30%] left-[40%] group cursor-pointer">
+                 <div className="w-4 h-4 bg-brand-primary rounded-full animate-ping absolute inset-0" />
+                 <div className="w-4 h-4 bg-brand-primary rounded-full relative z-10 border-2 border-white shadow-lg" />
+                 <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 bg-white/95 backdrop-blur px-2 py-1 rounded-lg shadow-xl border border-slate-100 opacity-0 group-hover:opacity-100 transition-all transform scale-90 group-hover:scale-100 pointer-events-none">
+                    <p className="text-[10px] font-black text-slate-800 uppercase whitespace-nowrap italic">Hito: Zona Industrial</p>
+                 </div>
+              </div>
+           </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const SeguimientoGestionView = ({ type, openModal }: { type: string; openModal: any }) => {
+  return (
+    <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 space-y-6">
+       <div className="flex items-center justify-between mb-2">
+         <div>
+            <h2 className="text-xl font-bold text-slate-900 leading-tight uppercase tracking-tighter">{type === 'proyectos' ? 'Proyectos en Ejecución' : 'Banco de Evidencias'}</h2>
+            <p className="text-xs text-slate-500 italic mt-1 leading-none shadow-xs">Control de obras y seguimiento visual de compromisos</p>
+         </div>
+         <button 
+          onClick={() => openModal('form', type === 'proyectos' ? 'Reportar Avance de Obra' : 'Subir Multimedia', {})}
+          className="flex items-center gap-2 px-4 py-2 bg-brand-primary text-white rounded-xl font-bold text-[10px] uppercase shadow-sm"
+        >
+            <Camera size={14} /> {type === 'proyectos' ? 'Reportar Avance' : 'Subir Multimedia'}
+         </button>
+      </div>
+
+      <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
+        <div className="p-6 border-b border-slate-50 flex items-center justify-between">
+           <h3 className="text-xs font-black text-slate-900 uppercase tracking-widest flex items-center gap-2 leading-none">
+              <TrendingUp size={16} className="text-brand-primary" />
+              Monitor de Ejecución Física / Financiera
+           </h3>
+        </div>
+        <div className="p-6">
+           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+             {[
+               { name: 'Canchas Sector 1', cc: 'C.C. Brisas', status: 'Financiamiento OK', physical: 75, budget: 100 },
+               { name: 'Pozo de Agua', cc: 'C.C. El Trigo', status: 'En Desembolso', physical: 20, budget: 45 },
+               { name: 'Iluminación LED', cc: 'Eje Panamericana', status: 'Completado', physical: 100, budget: 100 },
+             ].map((p, i) => (
+                <div 
+                   key={i} 
+                   onClick={() => openModal('detail', 'Proyecto: ' + p.name, p)}
+                   className="p-6 rounded-2xl bg-slate-50 border border-slate-100 space-y-4 hover:border-brand-primary/30 transition-all cursor-pointer shadow-sm group"
+                >
+                   <div className="flex justify-between items-start">
+                      <div>
+                        <h4 className="text-sm font-black text-slate-900 uppercase italic">{p.name}</h4>
+                        <p className="text-[10px] text-slate-500 font-bold">{p.cc} — {p.status}</p>
+                      </div>
+                      <div className="flex gap-2">
+                         <div className="text-center">
+                            <p className="text-[8px] font-black text-slate-400 uppercase leading-none mb-1 italic">Físico</p>
+                            <p className="text-xs font-black text-brand-primary italic">{p.physical}%</p>
+                         </div>
+                         <div className="text-center">
+                            <p className="text-[8px] font-black text-slate-400 uppercase leading-none mb-1 italic">Presup.</p>
+                            <p className="text-xs font-black text-indigo-600 italic">{p.budget}%</p>
+                         </div>
+                      </div>
+                   </div>
+                   <div className="space-y-2">
+                      <div className="h-1.5 w-full bg-slate-200 rounded-full overflow-hidden">
+                        <div className="h-full bg-brand-primary" style={{ width: `${p.physical}%` }} />
+                      </div>
+                      <div className="h-1 w-full bg-slate-200 rounded-full overflow-hidden opacity-50">
+                        <div className="h-full bg-indigo-600" style={{ width: `${p.budget}%` }} />
+                      </div>
+                   </div>
+                   <div className="flex gap-2 justify-end pt-2">
+                      <button className="p-1.5 bg-white border border-slate-200 rounded-lg text-slate-400 hover:text-brand-primary hover:border-brand-primary transition-all shadow-xs"><Camera size={14} /></button>
+                      <button className="p-1.5 bg-white border border-slate-200 rounded-lg text-slate-400 hover:text-brand-primary hover:border-brand-primary transition-all shadow-xs"><ArrowUpRight size={14} /></button>
+                   </div>
+                </div>
+             ))}
+           </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const ComunicacionesView = ({ openModal }: { openModal: any }) => {
+  return (
+    <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 space-y-6">
+       <div className="flex items-center justify-between mb-2">
+         <div>
+            <h2 className="text-xl font-bold text-slate-900 leading-tight uppercase tracking-tighter">Central de Comunicaciones</h2>
+            <p className="text-xs text-slate-500 italic mt-1 leading-none shadow-xs">Gestión de convocatorias y anuncios territoriales</p>
+         </div>
+         <button 
+          onClick={() => openModal('form', 'Nueva Difusión Territorial', {})}
+          className="flex items-center gap-2 px-4 py-2 bg-brand-primary text-white rounded-xl font-bold text-[10px] uppercase shadow-sm"
+        >
+            <Plus size={14} /> Nueva Difusión
+         </button>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2 space-y-4">
+           {[1, 2, 3].map((i) => (
+             <div key={i} className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm flex gap-6 hover:border-brand-primary/30 transition-all cursor-pointer shadow-xs group">
+                <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center text-slate-400 group-hover:bg-brand-primary/10 group-hover:text-brand-primary transition-colors shrink-0">
+                   <MessageSquare size={32} />
+                </div>
+                <div className="flex-1 space-y-2">
+                   <div className="flex justify-between items-start">
+                      <h4 className="text-sm font-black text-slate-900 uppercase italic">Convocatoria: Jornada de Sistematización 7T</h4>
+                      <span className="text-[10px] font-bold text-slate-400 uppercase italic">Hace {i}d</span>
+                   </div>
+                   <p className="text-xs text-slate-600 line-clamp-2">Se informa a todos los voceros de las comunas del eje que el próximo viernes se realizará el taller regional para la validación de nudos críticos...</p>
+                   <div className="flex gap-2 pt-2">
+                      <span className="px-2 py-0.5 bg-slate-50 text-slate-500 text-[9px] font-bold rounded italic uppercase border border-slate-100">WhatsApp</span>
+                      <span className="px-2 py-0.5 bg-slate-50 text-slate-500 text-[9px] font-bold rounded italic uppercase border border-slate-100">SMS</span>
+                      <span className="px-2 py-0.5 bg-slate-50 text-slate-500 text-[9px] font-bold rounded italic uppercase border border-slate-100">App</span>
+                   </div>
+                </div>
+             </div>
+           ))}
+        </div>
+
+        <div className="space-y-6">
+           <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm space-y-4 relative overflow-hidden">
+               <div className="absolute top-0 right-0 p-4 opacity-[0.05]">
+                  <Settings size={60} className="text-brand-primary" />
+               </div>
+               <h3 className="text-xs font-black text-slate-900 uppercase tracking-widest leading-none">Canales Activos</h3>
+               <div className="space-y-3 pt-2">
+                  {[
+                    { name: 'Bot de Telegram', status: 'Online', color: 'text-emerald-500' },
+                    { name: 'Central de SMS', status: 'Crédito Agotado', color: 'text-red-500' },
+                    { name: 'Notif. Push App', status: 'Online', color: 'text-emerald-500' },
+                  ].map((c, i) => (
+                    <div key={i} className="flex justify-between items-center bg-slate-50 p-3 rounded-xl border border-slate-100">
+                       <span className="text-xs font-bold text-slate-800 italic uppercase">{c.name}</span>
+                       <span className={cn("text-[8px] font-black uppercase italic", c.color)}>{c.status}</span>
+                    </div>
+                  ))}
+               </div>
+               <button 
+                 onClick={() => openModal('form', 'Configurar Canales de Comunicación', {})}
+                 className="w-full py-2.5 bg-brand-primary/10 text-brand-primary text-[10px] font-black rounded-xl hover:bg-brand-primary hover:text-white transition-all uppercase italic shadow-xs"
+               >
+                 Configurar Canales
+               </button>
+           </div>
+        </div>
+      </div>
     </div>
   );
 };
@@ -411,7 +902,8 @@ const SidebarContent = ({
   setActiveTab, 
   expandedItems, 
   toggleExpand,
-  onLogout 
+  onLogout,
+  openModal
 }: any) => (
   <>
     <div className="p-6">
@@ -482,6 +974,31 @@ const SidebarContent = ({
           </div>
         ))}
       </nav>
+
+      {/* Comunidades Coordinadas */}
+      {!collapsed && (
+        <div className="mt-8 space-y-4">
+          <div className="flex items-center justify-between px-3">
+             <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest italic">Comunidades</span>
+             <button onClick={() => openModal('form', 'Vincular Nueva Comunidad', {})} className="text-brand-primary hover:scale-110 transition-transform">
+                <Plus size={14} />
+             </button>
+          </div>
+          <div className="space-y-1">
+             {['Brisas del Norte', 'El Trigo A', 'Los Picapiedras', 'Colinas de Carrizal'].map((com, idx) => (
+                <button 
+                  key={idx}
+                  onClick={() => openModal('detail', 'Información de Comunidad: ' + com, { Estatus: 'Sincronizada', 'Último Reporte': 'Hace 2h', 'Nivel de Org': 'Elevado' })}
+                  className="w-full flex items-center gap-2 px-3 py-2 text-xs font-bold text-slate-600 hover:bg-slate-50 hover:text-brand-primary rounded-xl transition-all group"
+                >
+                   <MapPin size={14} className="text-slate-300 group-hover:text-brand-primary transition-colors" />
+                   <span className="truncate">{com}</span>
+                   <ChevronRight size={12} className="ml-auto opacity-0 group-hover:opacity-100 transition-all -translate-x-2 group-hover:translate-x-0" />
+                </button>
+             ))}
+          </div>
+        </div>
+      )}
     </div>
 
     <div className="mt-auto p-6 space-y-4">
@@ -520,12 +1037,15 @@ const SidebarContent = ({
   </>
 );
 
-const DashboardView = ({ user }: { user: SalaAutogobiernoData }) => {
+const DashboardView = ({ user, openModal }: { user: SalaAutogobiernoData; openModal: any }) => {
   return (
     <div className="animate-in fade-in slide-in-from-bottom-4 duration-700 space-y-6">
       {/* Analytical Metrics Header */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm overflow-hidden relative group">
+        <div 
+          onClick={() => openModal('detail', 'Alcance Poblacional', { 'Total Habitantes': '4,285', 'Familias': '1,200', 'Variación': '+2.1%', 'Estatus': 'Validado' })}
+          className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm overflow-hidden relative group cursor-pointer hover:border-brand-primary transition-all"
+        >
           <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform">
             <Users size={80} className="text-brand-primary" />
           </div>
@@ -539,7 +1059,10 @@ const DashboardView = ({ user }: { user: SalaAutogobiernoData }) => {
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm overflow-hidden relative group">
+        <div 
+          onClick={() => openModal('detail', 'Nivel de Organización', { 'Estatus CC': '8/12 Vigentes', 'Vocería': '78% Actualizada', 'Última Elección': 'hace 3 meses' })}
+          className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm overflow-hidden relative group cursor-pointer hover:border-brand-primary transition-all"
+        >
           <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform">
             <Activity size={80} className="text-brand-primary" />
           </div>
@@ -553,7 +1076,10 @@ const DashboardView = ({ user }: { user: SalaAutogobiernoData }) => {
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm overflow-hidden relative group">
+        <div 
+          onClick={() => openModal('form', 'Nueva Sistematización 7T', {})}
+          className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm overflow-hidden relative group cursor-pointer hover:border-brand-primary transition-all"
+        >
           <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform">
             <ClipboardCheck size={80} className="text-brand-primary" />
           </div>
@@ -627,22 +1153,26 @@ const DashboardView = ({ user }: { user: SalaAutogobiernoData }) => {
             </h3>
             <div className="space-y-3">
               {T7_INDICATORS.map(item => (
-                <div key={item.id} className="group cursor-pointer hover:bg-gray-50 transition-all p-2 -m-2 rounded-xl border border-transparent hover:border-gray-100">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className={cn("w-10 h-10 rounded-lg flex items-center justify-center", item.bg)}>
-                        <item.icon className={cn("w-5 h-5", item.color)} />
-                      </div>
-                      <div>
-                        <p className="text-xs font-bold text-gray-900">{item.name}</p>
-                        <p className="text-[10px] text-gray-500">{item.label}</p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                       <span className="text-sm font-bold text-gray-900">{item.count}</span>
-                       <ArrowUpRight className="inline-block w-3 h-3 text-brand-primary ml-1 opacity-0 group-hover:opacity-100 transition-opacity" />
-                    </div>
-                  </div>
+                <div 
+                  key={item.id} 
+                  onClick={() => openModal('detail', 'Sistematización: ' + item.name, { Meta: item.label, 'Cantidad Reportes': item.count, Estatus: 'Sincronizado' })}
+                  className="group cursor-pointer hover:bg-gray-50 transition-all p-2 -m-2 rounded-xl border border-transparent hover:border-gray-100"
+                >
+                   <div className="flex items-center justify-between">
+                     <div className="flex items-center gap-3">
+                       <div className={cn("w-10 h-10 rounded-lg flex items-center justify-center", item.bg)}>
+                         <item.icon className={cn("w-5 h-5", item.color)} />
+                       </div>
+                       <div>
+                         <p className="text-xs font-bold text-gray-900">{item.name}</p>
+                         <p className="text-[10px] text-gray-500">{item.label}</p>
+                       </div>
+                     </div>
+                     <div className="text-right">
+                        <span className="text-sm font-bold text-gray-900">{item.count}</span>
+                        <ArrowUpRight className="inline-block w-3 h-3 text-brand-primary ml-1 opacity-0 group-hover:opacity-100 transition-opacity" />
+                     </div>
+                   </div>
                 </div>
               ))}
             </div>
@@ -709,7 +1239,11 @@ const DashboardView = ({ user }: { user: SalaAutogobiernoData }) => {
                    { label: 'Falla Transformador 15kVA', area: 'Electricidad', sector: 'Sector 3', time: 'hace 4h' },
                    { label: 'Brote Agua Servidas', area: 'Aguas', sector: 'Vereda 2', time: 'hace 1d' },
                  ].map((alert, i) => (
-                   <div key={i} className="flex items-center justify-between p-3 bg-white border border-gray-100 rounded-xl hover:border-brand-primary/30 transition-all cursor-pointer shadow-sm group">
+                   <div 
+                    key={i} 
+                    onClick={() => openModal('detail', 'Alerta de Nudo Crítico', alert)}
+                    className="flex items-center justify-between p-3 bg-white border border-gray-100 rounded-xl hover:border-brand-primary/30 transition-all cursor-pointer shadow-sm group"
+                  >
                       <div className="flex items-center gap-3">
                         <div className="w-2 h-2 rounded-full bg-red-500 group-hover:scale-125 transition-transform" />
                         <div>
@@ -766,9 +1300,13 @@ const DashboardView = ({ user }: { user: SalaAutogobiernoData }) => {
                     <span className="text-xs text-gray-700">Reportes Pendientes</span>
                     <span className="text-xs font-bold text-brand-primary">12</span>
                  </div>
-                 <button className="w-full py-2 bg-white text-brand-primary text-[10px] font-bold rounded-lg border border-brand-primary/10 hover:bg-brand-primary hover:text-white transition-all shadow-sm uppercase tracking-wider">
+                 <button 
+                  onClick={() => openModal('success', 'Validación Exitosa', { message: 'Todos los datos de la base territorial han sido validados y sincronizados correctamente con el sistema central.' })}
+                  className="w-full py-2 bg-white text-brand-primary text-[10px] font-bold rounded-lg border border-brand-primary/10 hover:bg-brand-primary hover:text-white transition-all shadow-sm uppercase tracking-wider"
+                >
                     Ir a Validar Datos
                  </button>
+
               </div>
            </div>
         </div>
