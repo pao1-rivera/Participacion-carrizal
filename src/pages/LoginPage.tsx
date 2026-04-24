@@ -7,16 +7,19 @@ import { Lock, Mail, ArrowRight } from 'lucide-react';
 const LoginPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [error, setError] = useState<string | null>(null); // Estado para el error
   const { login, isLoading } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null); // Limpiar error previo
     try {
       await login(email, password);
       navigate('/dashboard');
     } catch (error) {
       console.error('Login failed', error);
+      setError('Credenciales inválidas. Por favor, intente de nuevo.');
     }
   };
 
@@ -73,6 +76,13 @@ const LoginPage = () => {
 
             <form className="space-y-6" onSubmit={handleSubmit}>
               <div className="space-y-5">
+                {/* Error Message */}
+                {error && (
+                  <div className="text-red-600 text-xs font-bold text-center bg-red-50 py-2 rounded-lg border border-red-100">
+                    {error}
+                  </div>
+                )}
+
                 <div>
                   <label htmlFor="email-address" className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">
                     Correo Electrónico
@@ -86,7 +96,7 @@ const LoginPage = () => {
                       type="email"
                       required
                       value={email}
-                      onChange={(e) => setEmail(e.target.value)}
+                      onChange={(e) => { setEmail(e.target.value); setError(null); }}
                       className="block w-full rounded-xl border border-gray-200 bg-gray-50 py-3.5 pl-11 pr-4 focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary focus:bg-white outline-none transition-all text-sm"
                       placeholder="ejemplo@carrizal.gov.ve"
                     />
@@ -110,7 +120,7 @@ const LoginPage = () => {
                       type="password"
                       required
                       value={password}
-                      onChange={(e) => setPassword(e.target.value)}
+                      onChange={(e) => { setPassword(e.target.value); setError(null); }}
                       className="block w-full rounded-xl border border-gray-200 bg-gray-50 py-3.5 pl-11 pr-4 focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary focus:bg-white outline-none transition-all text-sm"
                       placeholder="••••••••"
                     />

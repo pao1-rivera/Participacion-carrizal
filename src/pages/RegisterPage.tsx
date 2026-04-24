@@ -44,8 +44,9 @@ const baseSchema = z.object({
   confirmPassword: z.string(),
   firstName: z.string().min(2, 'Obligatorio'),
   lastName: z.string().min(2, 'Obligatorio'),
-  cedula: z.string().regex(/^[VE]-[0-9]{7,9}$/, 'Formato V-12345678'),
-  phone: z.string().min(10, 'Formato inválido'),
+  cedula: z.string().regex(/^[VE]-[0-9]{8}$/, 'Formato requerido: V-12345678 o E-12345678'),
+  phonePrefix: z.string().min(1, 'Requerido'),
+  phoneNumber: z.string().regex(/^[0-9]{7}$/, 'Deben ser 7 dígitos'),
 }).refine(data => data.password === data.confirmPassword, {
   message: "Las contraseñas no coinciden",
   path: ["confirmPassword"],
@@ -96,13 +97,19 @@ const RegisterPage = () => {
     resolver: zodResolver(getSchema()),
     defaultValues: {
       estatus: 'fortalecimiento',
+      phonePrefix: '0414'
     } as any
   });
 
   const onSubmit = async (data: any) => {
     if (!selectedRole) return;
+    // Unificamos el prefijo y el número para enviarlo al backend como 'phone'
+    const payload = {
+      ...data,
+      phone: `${data.phonePrefix}${data.phoneNumber}`
+    };
     try {
-      await registerUser(selectedRole, data);
+      await registerUser(selectedRole, payload);
       navigate('/dashboard');
     } catch (error) {
       console.error('Registration failed', error);
@@ -251,103 +258,27 @@ const RegisterPage = () => {
                   </div>
                   <div>
                     <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2">Teléfono</label>
-                    <input {...register('phone')} placeholder="0412-1234567" className="block w-full rounded-xl border border-gray-200 bg-gray-50 p-3 focus:bg-white focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/10 outline-none transition-all text-sm" />
-                    {errors.phone && <span className="mt-1 text-[10px] font-bold text-red-500 uppercase">{errors.phone.message as string}</span>}
-                  </div>
-                  {/* Solo se muestra si NO es director */}
-                  {selectedRole !== 'director' && (
-                    <div className="sm:col-span-2">
-                      <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2">Correo Electrónico</label>
-                      <input type="email" {...register('email')} placeholder="usuario@ejemplo.com" className="block w-full rounded-xl border border-gray-200 bg-gray-50 p-3 focus:bg-white focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/10 outline-none transition-all text-sm" />
-                      {errors.email && <span className="mt-1 text-[10px] font-bold text-red-500 uppercase">{errors.email.message as string}</span>}
+                    <div className="flex gap-2">
+                      <select {...register('phonePrefix')} className="w-1/3 rounded-xl border border-gray-200 bg-gray-50 p-3 focus:bg-white focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/10 outline-none transition-all text-sm font-medium">
+                        <option value="0414">0414</option>
+                        <option value="0424">0424</option>
+                        <option value="0412">0412</option>
+                        <option value="0422">0422</option>
+                        <option value="0416">0416</option>
+                        <option value="0426">0426</option>
+                      </select>
+                      <input 
+                        type="text" 
+                        {...register('phoneNumber')} 
+                        placeholder="1234567" 
+                        maxLength={7}
+                        className="flex-1 rounded-xl border border-gray-200 bg-gray-50 p-3 focus:bg-white focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/10 outline-none transition-all text-sm" 
+                      />
                     </div>
-                  )}
+                    {(errors.phonePrefix || errors.phoneNumber) && <span className="mt-1 text-[10px] font-bold text-red-500 uppercase">Formato Inválido</span>}
+                  </div>
                 </div>
               </div>
-
-              {/* Role Specific Fields
-              {selectedRole === 'consejo_comunal' && (
-                <div className="space-y-6 pt-10 border-t border-gray-100">
-                  <div className="flex items-center gap-3">
-                    <div className="h-8 w-1 bg-brand-primary rounded-full" />
-                    <h3 className="text-sm font-bold uppercase tracking-widest text-gray-400">
-                      Datos del Consejo Comunal
-                    </h3>
-                  </div>
-                  <div className="grid gap-6 sm:grid-cols-2">
-                    <div className="sm:col-span-2">
-                      <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2">Nombre del Consejo Comunal (Según Acta)</label>
-                      <input {...register('nombreConsejo')} placeholder="Nombre oficial" className="block w-full rounded-xl border border-gray-200 bg-gray-50 p-3 focus:bg-white focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/10 outline-none transition-all text-sm" />
-                      {errors.nombreConsejo && <span className="mt-1 text-[10px] font-bold text-red-500 uppercase">{errors.nombreConsejo.message as string}</span>}
-                    </div>
-                    <div>
-                      <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2">RIF</label>
-                      <input {...register('rif')} placeholder="J-12345678-9" className="block w-full rounded-xl border border-gray-200 bg-gray-50 p-3 focus:bg-white focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/10 outline-none transition-all text-sm" />
-                      {errors.rif && <span className="mt-1 text-[10px] font-bold text-red-500 uppercase">{errors.rif.message as string}</span>}
-                    </div>
-                    <div>
-                      <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2">Código SITUR (Opcional)</label>
-                      <input {...register('codigoSitur')} placeholder="Código ante el Ministerio" className="block w-full rounded-xl border border-gray-200 bg-gray-50 p-3 focus:bg-white focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/10 outline-none transition-all text-sm" />
-                    </div>
-                    <div>
-                      <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2">Comuna a la que pertenece</label>
-                      <input {...register('comunaPertenece')} placeholder="Nombre de la comuna" className="block w-full rounded-xl border border-gray-200 bg-gray-50 p-3 focus:bg-white focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/10 outline-none transition-all text-sm" />
-                      {errors.comunaPertenece && <span className="mt-1 text-[10px] font-bold text-red-500 uppercase">{errors.comunaPertenece.message as string}</span>}
-                    </div>
-                    <div>
-                      <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2">Acta Constitutiva (Digital)</label>
-                      <input type="file" className="block w-full text-xs text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-[10px] file:font-bold file:bg-brand-primary/10 file:text-brand-primary hover:file:bg-brand-primary/20 transition-all" />
-                    </div>
-                    <div>
-                      <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2">Nombre del Banco</label>
-                      <input {...register('nombreBanco')} placeholder="Ej. Banco de Venezuela" className="block w-full rounded-xl border border-gray-200 bg-gray-50 p-3 focus:bg-white focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/10 outline-none transition-all text-sm" />
-                      {errors.nombreBanco && <span className="mt-1 text-[10px] font-bold text-red-500 uppercase">{errors.nombreBanco.message as string}</span>}
-                    </div>
-                    <div>
-                      <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2">Número de Cuenta</label>
-                      <input {...register('numeroCuenta')} placeholder="0102XXXXXXXXXXXXXXXX" className="block w-full rounded-xl border border-gray-200 bg-gray-50 p-3 focus:bg-white focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/10 outline-none transition-all text-sm" />
-                      {errors.numeroCuenta && <span className="mt-1 text-[10px] font-bold text-red-500 uppercase">{errors.numeroCuenta.message as string}</span>}
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {selectedRole === 'comuna' && (
-                <div className="space-y-6 pt-10 border-t border-gray-100">
-                  <div className="flex items-center gap-3">
-                    <div className="h-8 w-1 bg-brand-primary rounded-full" />
-                    <h3 className="text-sm font-bold uppercase tracking-widest text-gray-400">
-                      Datos de la Comuna
-                    </h3>
-                  </div>
-                  <div className="grid gap-6 sm:grid-cols-2">
-                    <div className="sm:col-span-2">
-                      <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2">Nombre de la Comuna</label>
-                      <input {...register('nombreComuna')} placeholder="Ej. Comuna Brisas de Oriente" className="block w-full rounded-xl border border-gray-200 bg-gray-50 p-3 focus:bg-white focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/10 outline-none transition-all text-sm" />
-                      {errors.nombreComuna && <span className="mt-1 text-[10px] font-bold text-red-500 uppercase">{errors.nombreComuna.message as string}</span>}
-                    </div>
-                    <div>
-                      <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2">RIF de la Comuna</label>
-                      <input {...register('rif')} placeholder="J-12345678-9" className="block w-full rounded-xl border border-gray-200 bg-gray-50 p-3 focus:bg-white focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/10 outline-none transition-all text-sm" />
-                      {errors.rif && <span className="mt-1 text-[10px] font-bold text-red-500 uppercase">{errors.rif.message as string}</span>}
-                    </div>
-                    <div>
-                      <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2">Carta Fundacional (Digital)</label>
-                      <input type="file" className="block w-full text-xs text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-[10px] file:font-bold file:bg-brand-primary/10 file:text-brand-primary hover:file:bg-brand-primary/20 transition-all" />
-                    </div>
-                    <div>
-                      <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2">Nombre del Banco</label>
-                      <input {...register('nombreBanco')} placeholder="Ej. Banco de Venezuela" className="block w-full rounded-xl border border-gray-200 bg-gray-50 p-3 focus:bg-white focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/10 outline-none transition-all text-sm" />
-                      {errors.nombreBanco && <span className="mt-1 text-[10px] font-bold text-red-500 uppercase">{errors.nombreBanco.message as string}</span>}
-                    </div>
-                    <div>
-                      <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2">Número de Cuenta</label>
-                      <input {...register('numeroCuenta')} placeholder="0102XXXXXXXXXXXXXXXX" className="block w-full rounded-xl border border-gray-200 bg-gray-50 p-3 focus:bg-white focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/10 outline-none transition-all text-sm" />
-                      {errors.numeroCuenta && <span className="mt-1 text-[10px] font-bold text-red-500 uppercase">{errors.numeroCuenta.message as string}</span>}
-                    </div>
-                  </div>
-                </div>
-              )} */}
 
               {selectedRole === 'sala_autogobierno' && (
                 <div className="space-y-6 pt-10 border-t border-gray-100">
@@ -414,7 +345,7 @@ const RegisterPage = () => {
                 </div>
                 <div className="grid gap-6 sm:grid-cols-2">
                   <div className="sm:col-span-2">
-                    <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2">Confirmación de Correo Institucional</label>
+                    <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2">Correo Institucional / Principal</label>
                     <input type="email" {...register('email')} placeholder="usuario@carrizal.gov.ve" className="block w-full rounded-xl border border-gray-200 bg-gray-50 p-3 focus:bg-white focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/10 outline-none transition-all text-sm" />
                     {errors.email && <span className="mt-1 text-[10px] font-bold text-red-500 uppercase">{errors.email.message as string}</span>}
                   </div>
