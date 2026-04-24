@@ -51,7 +51,7 @@ const LoginPage = () => {
         <div className="absolute -bottom-24 -left-24 w-80 h-80 bg-brand-primary rounded-full blur-3xl opacity-20"></div>
         
         <div className="text-[10px] font-bold uppercase tracking-widest text-cyan-300 relative z-10">
-          <p>© 2024 Secretaría de Participación Ciudadana • Alcaldía de Carrizal</p>
+          <p>© 2026 Secretaría de Participación Ciudadana • Alcaldía de Carrizal</p>
         </div>
       </div>
 
@@ -63,7 +63,7 @@ const LoginPage = () => {
           className="w-full max-w-md space-y-8"
         >
           <div className="text-center mb-10">
-            <h3 className="text-2xl font-bold text-gray-800 mb-2">Ingreso al Sistema</h3>
+            <h3 className="text-2xl font-bold text-gray-800 mb-2">Ingrese al Sistema</h3>
             <p className="text-gray-500 text-sm">Identifíquese para acceder a sus funciones administrativas</p>
           </div>
 
@@ -126,46 +126,6 @@ const LoginPage = () => {
                 >
                   {isLoading ? 'Cargando...' : 'Acceder'}
                 </button>
-              </div>
-
-              {/* Dev Quick Access */}
-              <div className="pt-4 space-y-3">
-                <div className="relative">
-                  <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-gray-100"></span></div>
-                  <div className="relative flex justify-center text-[8px] font-bold uppercase tracking-widest text-gray-300">
-                    <span className="bg-white px-2">Acceso Rápido (Demo)</span>
-                  </div>
-                </div>
-                <div className="flex gap-2">
-                  <button 
-                    type="button" 
-                    onClick={() => { setEmail('admin@carrizal.gob.ve'); setPassword('password'); }}
-                    className="flex-1 py-2 rounded-lg bg-slate-50 text-[9px] font-black uppercase text-slate-400 border border-slate-100 hover:bg-slate-100 transition-colors"
-                  >
-                    Admin
-                  </button>
-                  <button 
-                    type="button" 
-                    onClick={() => { setEmail('comuna@carrizal.gob.ve'); setPassword('password'); }}
-                    className="flex-1 py-2 rounded-lg bg-indigo-50 text-[9px] font-black uppercase text-indigo-500 border border-indigo-100 hover:bg-indigo-100 transition-colors"
-                  >
-                    Comuna
-                  </button>
-                  <button 
-                    type="button" 
-                    onClick={() => { setEmail('sala@carrizal.gob.ve'); setPassword('password'); }}
-                    className="flex-1 py-2 rounded-lg bg-orange-50 text-[9px] font-black uppercase text-orange-500 border border-orange-100 hover:bg-orange-100 transition-colors"
-                  >
-                    Sala
-                  </button>
-                  <button 
-                    type="button" 
-                    onClick={() => { setEmail('consejo@test.com'); setPassword('password'); }}
-                    className="flex-1 py-2 rounded-lg bg-emerald-50 text-[9px] font-black uppercase text-emerald-500 border border-emerald-100 hover:bg-emerald-100 transition-colors"
-                  >
-                    Consejo
-                  </button>
-                </div>
               </div>
             </form>
           </div>

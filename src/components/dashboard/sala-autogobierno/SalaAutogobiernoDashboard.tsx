@@ -35,8 +35,7 @@ import {
   Menu,
   ChevronDown,
   MapPin,
-  Send,
-  X
+  Send
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../../../lib/utils';
@@ -56,6 +55,7 @@ import {
   AreaChart,
   Area
 } from 'recharts';
+import { X, Send } from 'lucide-react';
 
 interface NavItem {
   id: string;
@@ -230,27 +230,9 @@ export const SalaAutogobiernoDashboard: React.FC<{ user: SalaAutogobiernoData; o
   ];
 
   const renderContent = () => {
-    if (activeTab.startsWith('t')) {
-      return <SistematizacionView area={activeTab} openModal={openModal} />;
-    }
-
     switch (activeTab) {
       case 'dashboard':
-        return <DashboardView user={user} openModal={openModal} />;
-      case 'comunas':
-      case 'consejos':
-      case 'organizaciones':
-        return <OrganizacionesView type={activeTab} openModal={openModal} />;
-      case 'aca':
-      case 'suenos':
-      case 'planificacion':
-        return <PlanificacionEstrategicaView type={activeTab} openModal={openModal} />;
-      case 'proyectos':
-      case 'evidencias':
-      case 'seguimiento':
-        return <SeguimientoGestionView type={activeTab} openModal={openModal} />;
-      case 'comunicaciones':
-        return <ComunicacionesView openModal={openModal} />;
+        return <DashboardView user={user} />;
       default:
         return (
           <div className="flex items-center justify-center h-[calc(100vh-120px)]">
@@ -1043,7 +1025,7 @@ const DashboardView = ({ user, openModal }: { user: SalaAutogobiernoData; openMo
       {/* Analytical Metrics Header */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div 
-          onClick={() => openModal('detail', 'Alcance Poblacional', { 'Total Habitantes': '4,285', 'Familias': '1,200', 'Variación': '+2.1%', 'Estatus': 'Validado' })}
+          onClick={() => openModal('detail', 'Desglose de Población', { Total: '4,285', Familias: '1,200', Habitantes: '3,085', Estatus: 'Validado' })}
           className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm overflow-hidden relative group cursor-pointer hover:border-brand-primary transition-all"
         >
           <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform">
@@ -1060,7 +1042,7 @@ const DashboardView = ({ user, openModal }: { user: SalaAutogobiernoData; openMo
         </div>
 
         <div 
-          onClick={() => openModal('detail', 'Nivel de Organización', { 'Estatus CC': '8/12 Vigentes', 'Vocería': '78% Actualizada', 'Última Elección': 'hace 3 meses' })}
+          onClick={() => openModal('detail', 'Estatus de Organización', { Nivel: '78%', 'Consejos Vigentes': '8/12', Próx_Vencimientos: '2', Alertas: 'Ninguna' })}
           className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm overflow-hidden relative group cursor-pointer hover:border-brand-primary transition-all"
         >
           <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform">
@@ -1077,7 +1059,7 @@ const DashboardView = ({ user, openModal }: { user: SalaAutogobiernoData; openMo
         </div>
 
         <div 
-          onClick={() => openModal('form', 'Nueva Sistematización 7T', {})}
+          onClick={() => openModal('form', 'Nueva Sistematización Mensual', { mes: 'Mayo 2024' })}
           className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm overflow-hidden relative group cursor-pointer hover:border-brand-primary transition-all"
         >
           <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform">

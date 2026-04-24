@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -18,7 +18,8 @@ import {
   CheckCircle2,
   FileText,
   CreditCard,
-  MapPin
+  MapPin,
+  ArrowLeft
 } from 'lucide-react';
 import { Role, DirectorType } from '../types';
 import { cn } from '../lib/utils';
@@ -62,8 +63,8 @@ const consejoComunalSchema = baseSchema.extend({
 const comunaSchema = baseSchema.extend({
   nombreComuna: z.string().min(5, 'Ej. Comuna Brisas de Oriente'),
   rif: z.string().min(9, 'RIF Comunal'),
-  banco: z.string().min(20, 'Cuenta bancaria'),
-  vocerosFirmantes: z.string().min(5, 'Registro de voceros'),
+  nombreBanco: z.string().min(3, 'Nombre del banco obligatorio'),
+  numeroCuenta: z.string().min(20, 'La cuenta debe tener 20 dígitos'),
 });
 
 const salaAutogobiernoSchema = baseSchema.extend({
@@ -103,44 +104,22 @@ const RegisterPage = () => {
   const onSubmit = async (data: any) => {
     if (!selectedRole) return;
     try {
-      // Creamos un objeto base con los campos comunes
-      const registerData: {
-        email: string;
-        password: string;
-        firstName: string;
-        lastName: string;
-        cedula: string;
-        phone: string;
-        directorType?: DirectorType;
-      } = {
-        email: data.email,
-        password: data.password,
-        firstName: data.firstName,
-        lastName: data.lastName,
-        cedula: data.cedula,
-        phone: data.phone,
-      };
-      // Si el rol seleccionado es director, agregamos directorType
-      if (selectedRole === 'director') {
-        registerData.directorType = data.directorType;
-      }
-      await registerUser(selectedRole, registerData);
+      await registerUser(selectedRole, data);
       navigate('/dashboard');
-    } catch (error: any) {
+    } catch (error) {
       console.error('Registration failed', error);
-      alert(`Error: ${error.message}`);
     }
   };
 
-  function prevStep(event: React.MouseEvent<HTMLButtonElement>): void {
-    event.preventDefault();
-    setStep(current => Math.max(current - 1, 1));
-  }
+  const nextStep = () => {
+    if (selectedRole) {
+      setStep(step + 1);
+    }
+  };
 
-  function nextStep(event: React.MouseEvent<HTMLButtonElement>): void {
-    event.preventDefault();
-    setStep(current => Math.min(current + 1, 2));
-  }
+  const prevStep = () => {
+      setStep(step - 1);
+  };
 
   return (
     <div className="mx-auto max-w-5xl py-12 px-4">
@@ -205,7 +184,7 @@ const RegisterPage = () => {
                 </button>
               );
             })}
-            <div className="sm:col-span-2 lg:col-span-3 mt-12 flex justify-center">
+            <div className="sm:col-span-2 lg:col-span-3 mt-12 flex flex-col items-center gap-6">
                <button
                  onClick={nextStep}
                  disabled={!selectedRole}
@@ -213,7 +192,15 @@ const RegisterPage = () => {
                >
                  Siguiente Paso <ChevronRight className="h-5 w-5" />
                </button>
+
+               <Link
+                  to="/login"
+                  className="flex items-center justify-center gap-2 text-sm font-medium text-slate-500 hover:text-brand-primary transition-colors"
+                >
+                  <ArrowLeft className="h-4 w-4" /> Volver al inicio de sesión
+                </Link>
             </div>
+            
           </motion.div>
         ) : (
           <motion.div
@@ -269,6 +256,14 @@ const RegisterPage = () => {
                     <input {...register('phone')} placeholder="0412-1234567" className="block w-full rounded-xl border border-gray-200 bg-gray-50 p-3 focus:bg-white focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/10 outline-none transition-all text-sm" />
                     {errors.phone && <span className="mt-1 text-[10px] font-bold text-red-500 uppercase">{errors.phone.message as string}</span>}
                   </div>
+                  {/* Solo se muestra si NO es director */}
+                  {selectedRole !== 'director' && (
+                    <div className="sm:col-span-2">
+                      <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2">Correo Electrónico</label>
+                      <input type="email" {...register('email')} placeholder="usuario@ejemplo.com" className="block w-full rounded-xl border border-gray-200 bg-gray-50 p-3 focus:bg-white focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/10 outline-none transition-all text-sm" />
+                      {errors.email && <span className="mt-1 text-[10px] font-bold text-red-500 uppercase">{errors.email.message as string}</span>}
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -303,20 +298,17 @@ const RegisterPage = () => {
                     </div>
                     <div>
                       <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2">Acta Constitutiva (Digital)</label>
-                      <div className="mt-1 flex items-center justify-center w-full">
-                        <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-200 border-dashed rounded-2xl cursor-pointer bg-gray-50 hover:bg-gray-100 transition-all group">
-                          <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                            <FileText className="w-8 h-8 mb-3 text-gray-300 group-hover:text-brand-primary transition-colors" />
-                            <p className="mb-2 text-[10px] text-gray-400 font-bold uppercase tracking-widest">Subir PDF o Imagen</p>
-                          </div>
-                          <input type="file" className="hidden" />
-                        </label>
-                      </div>
+                      <input type="file" className="block w-full text-xs text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-[10px] file:font-bold file:bg-brand-primary/10 file:text-brand-primary hover:file:bg-brand-primary/20 transition-all" />
                     </div>
-                    <div className="sm:col-span-2">
-                       <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2">Cuenta Bancaria y Voceros Firmantes</label>
-                       <textarea {...register('cuentaBancaria')} rows={3} placeholder="Número de cuenta y listado de voceros autorizados (Nombre y Cédula)" className="block w-full rounded-xl border border-gray-200 bg-gray-50 p-3 focus:bg-white focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/10 outline-none transition-all text-sm" />
-                       {errors.cuentaBancaria && <span className="mt-1 text-[10px] font-bold text-red-500 uppercase">Requerido</span>}
+                    <div>
+                      <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2">Nombre del Banco</label>
+                      <input {...register('nombreBanco')} placeholder="Ej. Banco de Venezuela" className="block w-full rounded-xl border border-gray-200 bg-gray-50 p-3 focus:bg-white focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/10 outline-none transition-all text-sm" />
+                      {errors.nombreBanco && <span className="mt-1 text-[10px] font-bold text-red-500 uppercase">{errors.nombreBanco.message as string}</span>}
+                    </div>
+                    <div>
+                      <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2">Número de Cuenta</label>
+                      <input {...register('numeroCuenta')} placeholder="0102XXXXXXXXXXXXXXXX" className="block w-full rounded-xl border border-gray-200 bg-gray-50 p-3 focus:bg-white focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/10 outline-none transition-all text-sm" />
+                      {errors.numeroCuenta && <span className="mt-1 text-[10px] font-bold text-red-500 uppercase">{errors.numeroCuenta.message as string}</span>}
                     </div>
                   </div>
                 </div>
@@ -345,10 +337,15 @@ const RegisterPage = () => {
                       <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2">Carta Fundacional (Digital)</label>
                       <input type="file" className="block w-full text-xs text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-[10px] file:font-bold file:bg-brand-primary/10 file:text-brand-primary hover:file:bg-brand-primary/20 transition-all" />
                     </div>
-                    <div className="sm:col-span-2">
-                      <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2">Banco y Voceros Firmantes</label>
-                      <textarea {...register('banco')} rows={3} placeholder="Nombre del banco, número de cuenta y listado de voceros firmantes autorizados" className="block w-full rounded-xl border border-gray-200 bg-gray-50 p-3 focus:bg-white focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/10 outline-none transition-all text-sm" />
-                      {errors.vocerosFirmantes && <span className="mt-1 text-[10px] font-bold text-red-500 uppercase">Requerido</span>}
+                    <div>
+                      <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2">Nombre del Banco</label>
+                      <input {...register('nombreBanco')} placeholder="Ej. Banco de Venezuela" className="block w-full rounded-xl border border-gray-200 bg-gray-50 p-3 focus:bg-white focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/10 outline-none transition-all text-sm" />
+                      {errors.nombreBanco && <span className="mt-1 text-[10px] font-bold text-red-500 uppercase">{errors.nombreBanco.message as string}</span>}
+                    </div>
+                    <div>
+                      <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2">Número de Cuenta</label>
+                      <input {...register('numeroCuenta')} placeholder="0102XXXXXXXXXXXXXXXX" className="block w-full rounded-xl border border-gray-200 bg-gray-50 p-3 focus:bg-white focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/10 outline-none transition-all text-sm" />
+                      {errors.numeroCuenta && <span className="mt-1 text-[10px] font-bold text-red-500 uppercase">{errors.numeroCuenta.message as string}</span>}
                     </div>
                   </div>
                 </div>
@@ -419,7 +416,7 @@ const RegisterPage = () => {
                 </div>
                 <div className="grid gap-6 sm:grid-cols-2">
                   <div className="sm:col-span-2">
-                    <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2">Correo Electrónico</label>
+                    <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2">Confirmación de Correo Institucional</label>
                     <input type="email" {...register('email')} placeholder="usuario@carrizal.gov.ve" className="block w-full rounded-xl border border-gray-200 bg-gray-50 p-3 focus:bg-white focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/10 outline-none transition-all text-sm" />
                     {errors.email && <span className="mt-1 text-[10px] font-bold text-red-500 uppercase">{errors.email.message as string}</span>}
                   </div>
