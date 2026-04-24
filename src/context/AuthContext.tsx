@@ -2,7 +2,7 @@
 import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { UserProfile, Role, DirectorType } from '../types';
 import { supabase } from '../lib/supabaseClient';
-import { getRolIdForDirector } from '../lib/utils/roleMapping';
+import { getRolIdForDirector, getRolId } from '../lib/utils/roleMapping';
 
 interface RegisterData {
   email: string;
@@ -12,6 +12,15 @@ interface RegisterData {
   cedula: string;
   phone: string;
   directorType?: DirectorType;
+  // Sala de Autogobierno
+  nombreSala?: string;
+  ubicacion?: string;
+  vinculoAdministrativo?: string;
+  estatus?: string;
+  // Consejo Comunal y Comuna (más adelante)
+  nombreConsejo?: string;
+  rif?: string;
+  // ... otros
 }
 
 interface AuthContextType {
@@ -181,16 +190,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsLoading(true);
     setError(null);
     try {
-      if (role !== 'director') {
-        throw new Error('Por ahora solo se permite registro de directores');
-      }
-      if (!data.directorType) {
-        throw new Error('Tipo de director requerido');
+      // 1. Validar que el rol sea público permitido
+      const allowedRoles: Role[] = ['director', 'sala_autogobierno', 'comuna', 'consejo_comunal'];
+      if (!allowedRoles.includes(role)) {
+        throw new Error(`Registro no permitido para el rol "${role}". Contacta al administrador.`);
       }
 
-      const rolId = getRolIdForDirector(data.directorType);
+      // 2. Determinar el id_rol según el rol
+      let rolId: number;
+      if (role === 'director') {
+        if (!data.directorType) throw new Error('Tipo de director requerido');
+        rolId = getRolIdForDirector(data.directorType);
+      } else {
+        // Para sala, comuna, consejo comunal
+        rolId = getRolId(role);   // getRolId debe devolver 8,9,11 respectivamente
+      }
 
-      // 1. Crear usuario en Auth con metadatos
+      // 3. Crear usuario en Auth (el trigger creará perfil_usuario)
       const { data: authData, error: signUpError } = await supabase.auth.signUp({
         email: data.email,
         password: data.password,
@@ -205,29 +221,48 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           },
         },
       });
-
       if (signUpError) throw signUpError;
       if (!authData.user) throw new Error('No se pudo crear el usuario');
 
-      // 2. Insertar en datos_director
-      const { error: directorError } = await supabase
-        .from('datos_director')
-        .insert({
-          id_usuario: authData.user.id,
-          tipo_direccion: data.directorType,
-        });
+      // Pequeña pausa para que el trigger termine (opcional)
+      await new Promise(resolve => setTimeout(resolve, 500));
 
-      if (directorError) {
-        console.error('Error insertando datos_director:', directorError);
+      // 4. Datos específicos según el rol (solo si el formulario envió esos campos)
+      if (role === 'sala_autogobierno' && data.nombreSala) {
+        const { error: salaError } = await supabase
+          .from('datos_sala_autogobierno')
+          .insert({
+            id_usuario: authData.user.id,
+            nombre_sala: data.nombreSala,
+            ubicacion: data.ubicacion,
+            vinculo_administrativo: data.vinculoAdministrativo,
+            estatus: data.estatus || 'fortalecimiento',
+          });
+        if (salaError) console.error('Error insertando sala:', salaError);
       }
 
-      // 3. Redirigir al dashboard (la recarga completa cargará el usuario correctamente)
+      if (role === 'director') {
+        const { error: directorError } = await supabase
+          .from('datos_director')
+          .insert({
+            id_usuario: authData.user.id,
+            tipo_direccion: data.directorType,
+          });
+        if (directorError) console.error('Error insertando director:', directorError);
+      }
+
+      // Para comuna y consejo comunal, aún no se insertan datos específicos
+      // (se harán después, en el dashboard)
+
+      // 5. Redirigir al dashboard
       window.location.href = '/dashboard';
     } catch (err: any) {
       console.error('Registration error:', err);
       setError(err.message || 'Error al registrarse');
       setIsLoading(false);
       throw err;
+    } finally {
+      setIsLoading(false);
     }
   };
 

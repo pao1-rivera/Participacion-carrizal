@@ -86,8 +86,6 @@ const RegisterPage = () => {
 
   const getSchema = () => {
     switch (selectedRole) {
-      case 'consejo_comunal': return consejoComunalSchema;
-      case 'comuna': return comunaSchema;
       case 'sala_autogobierno': return salaAutogobiernoSchema;
       case 'director': return directorSchema;
       default: return baseSchema;
@@ -267,7 +265,7 @@ const RegisterPage = () => {
                 </div>
               </div>
 
-              {/* Role Specific Fields */}
+              {/* Role Specific Fields
               {selectedRole === 'consejo_comunal' && (
                 <div className="space-y-6 pt-10 border-t border-gray-100">
                   <div className="flex items-center gap-3">
@@ -349,7 +347,7 @@ const RegisterPage = () => {
                     </div>
                   </div>
                 </div>
-              )}
+              )} */}
 
               {selectedRole === 'sala_autogobierno' && (
                 <div className="space-y-6 pt-10 border-t border-gray-100">
