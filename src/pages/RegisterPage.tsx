@@ -103,22 +103,44 @@ const RegisterPage = () => {
   const onSubmit = async (data: any) => {
     if (!selectedRole) return;
     try {
-      await registerUser(selectedRole, data);
+      // Creamos un objeto base con los campos comunes
+      const registerData: {
+        email: string;
+        password: string;
+        firstName: string;
+        lastName: string;
+        cedula: string;
+        phone: string;
+        directorType?: DirectorType;
+      } = {
+        email: data.email,
+        password: data.password,
+        firstName: data.firstName,
+        lastName: data.lastName,
+        cedula: data.cedula,
+        phone: data.phone,
+      };
+      // Si el rol seleccionado es director, agregamos directorType
+      if (selectedRole === 'director') {
+        registerData.directorType = data.directorType;
+      }
+      await registerUser(selectedRole, registerData);
       navigate('/dashboard');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Registration failed', error);
+      alert(`Error: ${error.message}`);
     }
   };
 
-  const nextStep = () => {
-    if (selectedRole) {
-      setStep(step + 1);
-    }
-  };
+  function prevStep(event: React.MouseEvent<HTMLButtonElement>): void {
+    event.preventDefault();
+    setStep(current => Math.max(current - 1, 1));
+  }
 
-  const prevStep = () => {
-      setStep(step - 1);
-  };
+  function nextStep(event: React.MouseEvent<HTMLButtonElement>): void {
+    event.preventDefault();
+    setStep(current => Math.min(current + 1, 2));
+  }
 
   return (
     <div className="mx-auto max-w-5xl py-12 px-4">

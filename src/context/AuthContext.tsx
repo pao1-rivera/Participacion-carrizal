@@ -1,12 +1,26 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import { UserProfile, Role } from '../types';
+// src/context/AuthContext.tsx
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
+import { UserProfile, Role, DirectorType } from '../types';
+import { supabase } from '../lib/supabaseClient';
+import { getRolIdForDirector } from '../lib/utils/roleMapping';
+
+interface RegisterData {
+  email: string;
+  password: string;
+  firstName: string;
+  lastName: string;
+  cedula: string;
+  phone: string;
+  directorType?: DirectorType;
+}
 
 interface AuthContextType {
   user: UserProfile | null;
   login: (email: string, password: string) => Promise<void>;
-  logout: () => void;
-  register: (role: Role, data: any) => Promise<void>;
+  logout: () => Promise<void>;
+  register: (role: Role, data: RegisterData) => Promise<void>;
   isLoading: boolean;
+  error: string | null;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -14,188 +28,229 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const loadingUserRef = useRef(false);
+  const initialLoadRef = useRef(true);
 
-  useEffect(() => {
-    // Check for "session"
-    const storedUser = localStorage.getItem('mock_user');
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-    }
-    setIsLoading(false);
-  }, []);
+  // Función robusta para obtener el usuario con sus roles (similar a la versión funcional)
+  const getCurrentUserWithRoles = async (): Promise<UserProfile | null> => {
+    console.log('getCurrentUserWithRoles: inicio');
+    try {
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError) {
+        console.error('Error getSession:', sessionError);
+        return null;
+      }
+      if (!session?.user) {
+        console.log('No hay sesión activa');
+        return null;
+      }
+      const user = session.user;
+      console.log('user.id:', user.id);
 
-  const login = async (email: string, _password: string) => {
-    // Mock login logic
-    setIsLoading(true);
-    setTimeout(() => {
-      let mockUser: UserProfile;
+      // Obtener perfil del usuario
+      const { data: perfil, error: perfilError } = await supabase
+        .from('perfil_usuario')
+        .select('*')
+        .eq('id_usuario', user.id)
+        .maybeSingle();
 
-      if (email === 'admin@carrizal.gob.ve') {
-        mockUser = {
-          id: '1',
-          email,
-          role: 'admin',
-          firstName: 'Admin',
-          lastName: 'Municipal',
-          cedula: 'V-00000001',
-          phone: '0412-1111111',
-          createdAt: new Date().toISOString(),
-        };
-      } else if (email === 'consejo@test.com') {
-        mockUser = {
-          id: '2',
-          email,
-          role: 'consejo_comunal',
-          firstName: 'Vocero',
-          lastName: 'Unidad',
-          cedula: 'V-12345678',
-          phone: '0414-0000000',
-          nombreConsejo: 'C.C. El Despertar de Carrizal',
-          rif: 'J-12345678-9',
-          comunaPertenece: 'Comuna Brisas',
-          cuentaBancaria: '0102-0000-0000-0000-0000',
-          firmantes: '3 Voceros',
-          createdAt: new Date().toISOString(),
-        };
-      } else if (email === 'comuna@carrizal.gob.ve') {
-        mockUser = {
-          id: '3',
-          email,
-          role: 'comuna',
-          firstName: 'Coordinador',
-          lastName: 'Comunal',
-          cedula: 'V-11223344',
-          phone: '0412-3333333',
-          comunaName: 'Comuna Lanceros de Carrizal',
-          rif: 'J-50000000-0',
-          createdAt: new Date().toISOString(),
-        };
-      } else if (email === 'sala@carrizal.gob.ve') {
-        mockUser = {
-          id: '4',
-          email,
-          role: 'sala_autogobierno',
-          firstName: 'Coordinador',
-          lastName: 'de Sala',
-          cedula: 'V-99887766',
-          phone: '0412-5555555',
-          nombreSala: 'Sala de Autogobierno "Eje Central"',
-          ubicacion: 'Casco Central de Carrizal',
-          vinculoAdministrativo: 'Circuito 1',
-          estatus: 'consolidada',
-          createdAt: new Date().toISOString(),
-        };
-      } else if (email === 'alcaldesa@carrizal.gob.ve') {
-        mockUser = {
-          id: '5',
-          email,
-          role: 'alcaldesa',
-          firstName: 'Morales',
-          lastName: 'Administración',
-          cedula: 'V-12121212',
-          phone: '0414-0000000',
-          createdAt: new Date().toISOString(),
-        };
-      } else if (email === 'comunas@carrizal.gob.ve') {
-        mockUser = {
-          id: 'dir_1',
-          email,
-          role: 'director',
-          directorType: 'comunas_consejos_comunales',
-          firstName: 'Director',
-          lastName: 'de Comunas',
-          cedula: 'V-10101010',
-          phone: '0412-1111111',
-          createdAt: new Date().toISOString(),
-        };
-      } else if (email === 'planificacion@carrizal.gob.ve') {
-        mockUser = {
-          id: 'dir_2',
-          email,
-          role: 'director',
-          directorType: 'planificacion_formacion',
-          firstName: 'Director',
-          lastName: 'de Planificación',
-          cedula: 'V-20202020',
-          phone: '0412-2222222',
-          createdAt: new Date().toISOString(),
-        };
-      } else if (email === 'adultomayor@carrizal.gob.ve') {
-        mockUser = {
-          id: 'dir_3',
-          email,
-          role: 'director',
-          directorType: 'adultas_adulto_mayor',
-          firstName: 'Director',
-          lastName: 'de Adulto Mayor',
-          cedula: 'V-30303030',
-          phone: '0412-3333333',
-          createdAt: new Date().toISOString(),
-        };
-      } else if (email === 'sec@carrizal.gob.ve') {
-        mockUser = {
-          id: 'sec_1',
-          email,
-          role: 'secretario',
-          firstName: 'Luis',
-          lastName: 'Aponte',
-          cedula: 'V-15151515',
-          phone: '0414-9999999',
-          createdAt: new Date().toISOString(),
-        };
-      } else if (email === 'digitalizacion@carrizal.gob.ve') {
-        mockUser = {
-          id: 'dir_4',
-          email,
-          role: 'director',
-          directorType: 'digitalizacion_tramites',
-          firstName: 'Director',
-          lastName: 'de Digitalización',
-          cedula: 'V-40404040',
-          phone: '0412-4444444',
-          createdAt: new Date().toISOString(),
-        };
-      } else {
-        mockUser = {
-          id: 'default',
-          email,
-          role: 'secretario',
-          firstName: 'Usuario',
-          lastName: 'Demo',
-          cedula: 'V-00000000',
-          phone: '0412-0000000',
-          createdAt: new Date().toISOString(),
-        };
+      if (perfilError || !perfil) {
+        console.error('Error perfil_usuario:', perfilError);
+        return null;
       }
 
-      setUser(mockUser);
-      localStorage.setItem('mock_user', JSON.stringify(mockUser));
-      setIsLoading(false);
-    }, 1000);
-  };
+      // Obtener el rol asociado
+      let role: Role = 'secretario';
+      let nivelJerarquia = 99;
 
-  const register = async (role: Role, data: any) => {
-    setIsLoading(true);
-    setTimeout(() => {
-      const newUser: UserProfile = {
-        ...data,
-        id: Math.random().toString(36).substr(2, 9),
+      if (perfil.id_rol) {
+        const { data: rolInfo, error: rolError } = await supabase
+          .from('rol_usuario')
+          .select('*')
+          .eq('id_rol', perfil.id_rol)
+          .maybeSingle();
+
+        if (!rolError && rolInfo) {
+          const roleName = rolInfo.nombre_rol;
+          nivelJerarquia = rolInfo.nivel_jerarquia;
+          
+          // Mapear nombre_rol de la BD al tipo Role del frontend
+          switch (roleName) {
+            case 'admin': role = 'admin'; break;
+            case 'alcaldesa': role = 'alcaldesa'; break;
+            case 'secretario': role = 'secretario'; break;
+            case 'director_formacion_planif':
+            case 'director_comunas_circuitos':
+            case 'director_adulto_mayor':
+            case 'director_digitalizacion':
+              role = 'director';
+              break;
+            case 'encargado_sala_autogob': role = 'sala_autogobierno'; break;
+            case 'vocero_comuna': role = 'comuna'; break;
+            case 'consejo_comunal': role = 'consejo_comunal'; break;
+            default: role = 'secretario';
+          }
+          console.log('Rol encontrado:', roleName, '→ mapeado a:', role);
+        }
+      }
+
+      // Construir UserProfile
+      const profile: UserProfile = {
+        id: perfil.id_usuario,
+        email: perfil.email,
         role,
-        createdAt: new Date().toISOString(),
+        firstName: perfil.nombre || '',
+        lastName: perfil.apellido || '',
+        cedula: perfil.cedula || '',
+        phone: perfil.telefono || '',
+        createdAt: perfil.created_at,
       };
-      setUser(newUser);
-      localStorage.setItem('mock_user', JSON.stringify(newUser));
-      setIsLoading(false);
-    }, 1500);
+
+      // Si es director, obtener tipo_direccion
+      if (role === 'director') {
+        const { data: dirData, error: dirError } = await supabase
+          .from('datos_director')
+          .select('tipo_direccion')
+          .eq('id_usuario', user.id)
+          .maybeSingle();
+
+        if (!dirError && dirData?.tipo_direccion) {
+          (profile as any).directorType = dirData.tipo_direccion;
+        }
+      }
+
+      return profile;
+    } catch (error) {
+      console.error('Error catastrófico en getCurrentUserWithRoles:', error);
+      return null;
+    }
   };
 
-  const logout = () => {
-    setUser(null);
-    localStorage.removeItem('mock_user');
+  // Cargar sesión al iniciar - usando la misma estrategia que la versión funcional
+  useEffect(() => {
+    // Solo ejecutar una vez
+    if (initialLoadRef.current === false) return;
+    initialLoadRef.current = false;
+
+    const loadUser = async () => {
+      if (loadingUserRef.current) return;
+      loadingUserRef.current = true;
+      
+      console.log('Loading user session...');
+      setIsLoading(true);
+      
+      try {
+        const userWithRoles = await getCurrentUserWithRoles();
+        setUser(userWithRoles);
+      } catch (err) {
+        console.error('Error loading user:', err);
+        setUser(null);
+      } finally {
+        setIsLoading(false);
+        loadingUserRef.current = false;
+      }
+    };
+    
+    loadUser();
+  }, []);
+
+  // Login con email y contraseña - usando redirección completa
+  const login = async (email: string, password: string) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+      if (signInError) throw signInError;
+      
+      // Forzar recarga completa para que el contexto se reinicie y evite locks
+      window.location.href = '/dashboard';
+    } catch (err: any) {
+      console.error('Login error:', err);
+      setError(err.message || 'Error al iniciar sesión');
+      setIsLoading(false);
+      throw err;
+    }
+  };
+
+  // Registro de nuevo usuario
+  const register = async (role: Role, data: RegisterData) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      if (role !== 'director') {
+        throw new Error('Por ahora solo se permite registro de directores');
+      }
+      if (!data.directorType) {
+        throw new Error('Tipo de director requerido');
+      }
+
+      const rolId = getRolIdForDirector(data.directorType);
+
+      // 1. Crear usuario en Auth con metadatos
+      const { data: authData, error: signUpError } = await supabase.auth.signUp({
+        email: data.email,
+        password: data.password,
+        options: {
+          data: {
+            nombre: data.firstName,
+            apellido: data.lastName,
+            cedula: data.cedula,
+            telefono: data.phone,
+            id_rol: rolId,
+            activo: true,
+          },
+        },
+      });
+
+      if (signUpError) throw signUpError;
+      if (!authData.user) throw new Error('No se pudo crear el usuario');
+
+      // 2. Insertar en datos_director
+      const { error: directorError } = await supabase
+        .from('datos_director')
+        .insert({
+          id_usuario: authData.user.id,
+          tipo_direccion: data.directorType,
+        });
+
+      if (directorError) {
+        console.error('Error insertando datos_director:', directorError);
+      }
+
+      // 3. Redirigir al dashboard (la recarga completa cargará el usuario correctamente)
+      window.location.href = '/dashboard';
+    } catch (err: any) {
+      console.error('Registration error:', err);
+      setError(err.message || 'Error al registrarse');
+      setIsLoading(false);
+      throw err;
+    }
+  };
+
+  // Logout
+  const logout = async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      await supabase.auth.signOut();
+      setUser(null);
+      window.location.href = '/login';
+    } catch (err: any) {
+      console.error('Logout error:', err);
+      setError(err.message);
+      setIsLoading(false);
+      throw err;
+    }
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, register, isLoading }}>
+    <AuthContext.Provider
+      value={{ user, login, logout, register, isLoading, error }}
+    >
       {children}
     </AuthContext.Provider>
   );
