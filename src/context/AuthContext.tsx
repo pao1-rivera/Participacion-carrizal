@@ -1,8 +1,23 @@
-// src/context/AuthContext.tsx
+"use client";
+
 import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
-import { UserProfile, Role, DirectorType } from '../types';
-import { supabase } from '../lib/supabaseClient';
-import { getRolIdForDirector, getRolId } from '../lib/utils/roleMapping';
+import { supabase } from '@/app/lib/supabaseClient';
+
+// --- Interfaces ---
+type Role = 'admin' | 'alcaldesa' | 'secretario' | 'director' | 'sala_autogobierno' | 'comuna' | 'consejo_comunal';
+type DirectorType = 'formacion_planif' | 'comunas_circuitos' | 'adulto_mayor' | 'digitalizacion';
+
+interface UserProfile {
+  id: string;
+  email: string;
+  role: Role;
+  firstName: string;
+  lastName: string;
+  cedula: string;
+  phone: string;
+  createdAt: string;
+  directorType?: DirectorType;
+}
 
 interface RegisterData {
   email: string;
@@ -12,15 +27,12 @@ interface RegisterData {
   cedula: string;
   phone: string;
   directorType?: DirectorType;
-  // Sala de Autogobierno
   nombreSala?: string;
   ubicacion?: string;
   vinculoAdministrativo?: string;
   estatus?: string;
-  // Consejo Comunal y Comuna (más adelante)
   nombreConsejo?: string;
   rif?: string;
-  // ... otros
 }
 
 interface AuthContextType {
@@ -32,6 +44,32 @@ interface AuthContextType {
   error: string | null;
 }
 
+const getRolId = (role: Role): number => {
+  const roles: Record<string, number> = { 
+    sala_autogobierno: 8, 
+    comuna: 9, 
+    consejo_comunal: 11,
+    admin: 1,
+    alcaldesa: 2,
+    secretario: 3 
+  };
+  return roles[role] || 3; 
+};
+
+const getRolIdForDirector = (type: DirectorType): number => {
+  const types: Record<string, number> = {
+    planificacion_formacion: 4,
+    comunas_consejos_comunales: 5,
+    adultas_adulto_mayor: 6,
+    digitalizacion_tramites: 7,
+    formacion_planif: 4,
+    comunas_circuitos: 5,
+    adulto_mayor: 6,
+    digitalizacion: 7
+  };
+  return types[type] || 4;
+};
+
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -41,51 +79,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const loadingUserRef = useRef(false);
   const initialLoadRef = useRef(true);
 
-  // Función robusta para obtener el usuario con sus roles (similar a la versión funcional)
   const getCurrentUserWithRoles = async (): Promise<UserProfile | null> => {
-    console.log('getCurrentUserWithRoles: inicio');
     try {
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-      if (sessionError) {
-        console.error('Error getSession:', sessionError);
-        return null;
-      }
-      if (!session?.user) {
-        console.log('No hay sesión activa');
-        return null;
-      }
-      const user = session.user;
-      console.log('user.id:', user.id);
+      if (sessionError || !session?.user) return null;
 
-      // Obtener perfil del usuario
+      const user = session.user;
       const { data: perfil, error: perfilError } = await supabase
         .from('perfil_usuario')
         .select('*')
         .eq('id_usuario', user.id)
         .maybeSingle();
 
-      if (perfilError || !perfil) {
-        console.error('Error perfil_usuario:', perfilError);
-        return null;
-      }
+      if (perfilError || !perfil) return null;
 
-      // Obtener el rol asociado
       let role: Role = 'secretario';
-      let nivelJerarquia = 99;
-
       if (perfil.id_rol) {
-        const { data: rolInfo, error: rolError } = await supabase
+        const { data: rolInfo } = await supabase
           .from('rol_usuario')
-          .select('*')
+          .select('nombre_rol')
           .eq('id_rol', perfil.id_rol)
           .maybeSingle();
 
-        if (!rolError && rolInfo) {
-          const roleName = rolInfo.nombre_rol;
-          nivelJerarquia = rolInfo.nivel_jerarquia;
+        if (rolInfo) {
+          const nombreRolDb = rolInfo.nombre_rol.toLowerCase().trim();
           
-          // Mapear nombre_rol de la BD al tipo Role del frontend
-          switch (roleName) {
+          switch (nombreRolDb) {
             case 'admin': role = 'admin'; break;
             case 'alcaldesa': role = 'alcaldesa'; break;
             case 'secretario': role = 'secretario'; break;
@@ -97,14 +116,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               break;
             case 'encargado_sala_autogob': role = 'sala_autogobierno'; break;
             case 'vocero_comuna': role = 'comuna'; break;
-            case 'consejo_comunal': role = 'consejo_comunal'; break;
-            default: role = 'secretario';
+            case 'consejo_comunal': 
+            case 'vocero_consejo_comunal':
+              role = 'consejo_comunal'; 
+              break;
           }
-          console.log('Rol encontrado:', roleName, '→ mapeado a:', role);
         }
       }
 
-      // Construir UserProfile
       const profile: UserProfile = {
         id: perfil.id_usuario,
         email: perfil.email,
@@ -116,97 +135,64 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         createdAt: perfil.created_at,
       };
 
-      // Si es director, obtener tipo_direccion
       if (role === 'director') {
-        const { data: dirData, error: dirError } = await supabase
+        const { data: dirData } = await supabase
           .from('datos_director')
           .select('tipo_direccion')
           .eq('id_usuario', user.id)
           .maybeSingle();
-
-        if (!dirError && dirData?.tipo_direccion) {
-          (profile as any).directorType = dirData.tipo_direccion;
-        }
+        if (dirData) profile.directorType = dirData.tipo_direccion;
       }
 
       return profile;
-    } catch (error) {
-      console.error('Error catastrófico en getCurrentUserWithRoles:', error);
+    } catch (err) {
       return null;
     }
   };
 
-  // Cargar sesión al iniciar - usando la misma estrategia que la versión funcional
   useEffect(() => {
-    // Solo ejecutar una vez
-    if (initialLoadRef.current === false) return;
+    if (!initialLoadRef.current) return;
     initialLoadRef.current = false;
 
     const loadUser = async () => {
       if (loadingUserRef.current) return;
       loadingUserRef.current = true;
-      
-      console.log('Loading user session...');
       setIsLoading(true);
-      
       try {
         const userWithRoles = await getCurrentUserWithRoles();
         setUser(userWithRoles);
-      } catch (err) {
-        console.error('Error loading user:', err);
-        setUser(null);
       } finally {
         setIsLoading(false);
         loadingUserRef.current = false;
       }
     };
-    
     loadUser();
   }, []);
 
-  // Login con email y contraseña - usando redirección completa
   const login = async (email: string, password: string) => {
     setIsLoading(true);
     setError(null);
     try {
-      const { error: signInError } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
+      const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
       if (signInError) throw signInError;
       
-      // Forzar recarga completa para que el contexto se reinicie y evite locks
-      window.location.href = '/dashboard';
+      const userWithRoles = await getCurrentUserWithRoles();
+      setUser(userWithRoles);
     } catch (err: any) {
-      console.error('Login error:', err);
-      setError(err.message || 'Error al iniciar sesión');
+      setError(err.message);
       setIsLoading(false);
       throw err;
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  // Registro de nuevo usuario
   const register = async (role: Role, data: RegisterData) => {
     setIsLoading(true);
     setError(null);
     try {
-      // 1. Validar que el rol sea público permitido
-      const allowedRoles: Role[] = ['director', 'sala_autogobierno', 'comuna', 'consejo_comunal'];
-      if (!allowedRoles.includes(role)) {
-        throw new Error(`Registro no permitido para el rol "${role}". Contacta al administrador.`);
-      }
-
-      // 2. Determinar el id_rol según el rol
-      let rolId: number;
-      if (role === 'director') {
-        if (!data.directorType) throw new Error('Tipo de director requerido');
-        rolId = getRolIdForDirector(data.directorType);
-      } else {
-        // Para sala, comuna, consejo comunal
-        rolId = getRolId(role);   // getRolId debe devolver 8,9,11 respectivamente
-      }
-
-      // 3. Crear usuario en Auth (el trigger creará perfil_usuario)
+      const rolId = role === 'director' ? getRolIdForDirector(data.directorType!) : getRolId(role);
+      
       const { data: authData, error: signUpError } = await supabase.auth.signUp({
         email: data.email,
         password: data.password,
@@ -221,71 +207,42 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           },
         },
       });
+
       if (signUpError) throw signUpError;
-      if (!authData.user) throw new Error('No se pudo crear el usuario');
+      if (!authData.user) throw new Error("Error al crear usuario");
 
-      // Pequeña pausa para que el trigger termine (opcional)
-      await new Promise(resolve => setTimeout(resolve, 500));
-
-      // 4. Datos específicos según el rol (solo si el formulario envió esos campos)
-      if (role === 'sala_autogobierno' && data.nombreSala) {
-        const { error: salaError } = await supabase
-          .from('datos_sala_autogobierno')
-          .insert({
-            id_usuario: authData.user.id,
-            nombre_sala: data.nombreSala,
-            ubicacion: data.ubicacion,
-            vinculo_administrativo: data.vinculoAdministrativo,
-            estatus: data.estatus || 'fortalecimiento',
-          });
-        if (salaError) console.error('Error insertando sala:', salaError);
+      if (role === 'sala_autogobierno') {
+        await supabase.from('datos_sala_autogobierno').insert({
+          id_usuario: authData.user.id,
+          nombre_sala: data.nombreSala,
+          ubicacion: data.ubicacion,
+          vinculo_administrativo: data.vinculoAdministrativo,
+          estatus: data.estatus || 'fortalecimiento',
+        });
       }
 
       if (role === 'director') {
-        const { error: directorError } = await supabase
-          .from('datos_director')
-          .insert({
-            id_usuario: authData.user.id,
-            tipo_direccion: data.directorType,
-          });
-        if (directorError) console.error('Error insertando director:', directorError);
+        await supabase.from('datos_director').insert({
+          id_usuario: authData.user.id,
+          tipo_direccion: data.directorType,
+        });
       }
-
-      // Para comuna y consejo comunal, aún no se insertan datos específicos
-      // (se harán después, en el dashboard)
-
-      // 5. Redirigir al dashboard
-      window.location.href = '/dashboard';
     } catch (err: any) {
-      console.error('Registration error:', err);
-      setError(err.message || 'Error al registrarse');
-      setIsLoading(false);
+      setError(err.message);
       throw err;
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Logout
   const logout = async () => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      await supabase.auth.signOut();
-      setUser(null);
-      window.location.href = '/login';
-    } catch (err: any) {
-      console.error('Logout error:', err);
-      setError(err.message);
-      setIsLoading(false);
-      throw err;
-    }
+    await supabase.auth.signOut();
+    setUser(null);
+    window.location.href = '/login';
   };
 
   return (
-    <AuthContext.Provider
-      value={{ user, login, logout, register, isLoading, error }}
-    >
+    <AuthContext.Provider value={{ user, login, logout, register, isLoading, error }}>
       {children}
     </AuthContext.Provider>
   );
@@ -293,8 +250,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
+  if (!context) throw new Error('useAuth must be used within AuthProvider');
   return context;
 };

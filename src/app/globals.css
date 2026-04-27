@@ -1,0 +1,26 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  
+  /* Colores de Marca */
+  --color-brand-primary: #009b93;
+  --color-brand-secondary: #005e59;
+  --color-brand-accent: #00a651;
+  
+  /* Alias para superficies */
+  --color-surface-soft: #f9fafb;
+  --color-surface-card: #ffffff;
+  --color-border-subtle: #e5e7eb;
+
+  /* IMPORTANTE: En Tailwind v4, si usas @theme, debes asegurarte 
+     de que los colores estándar no se pierdan. 
+     Si el verde no aparece es porque el compilador no lo está mapeando.
+  */
+}
+
+@layer base {
+  body {
+    @apply font-sans antialiased text-gray-900 bg-gray-50;
+  }
+}

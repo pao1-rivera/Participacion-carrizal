@@ -1,0 +1,153 @@
+"use client";
+
+import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { useAuth } from '@/context/AuthContext';
+import { motion } from 'framer-motion';
+import { Lock, Mail, ArrowRight } from 'lucide-react';
+
+const LoginPage = () => {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const { login, isLoading } = useAuth();
+  const router = useRouter();
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    try {
+      await login(email, password);
+      router.push('/dashboard'); 
+    } catch (error) {
+      console.error('Login failed', error);
+      setError('Credenciales inválidas. Por favor, intente de nuevo.');
+    }
+  };
+
+  return (
+    <div className="min-h-screen grid grid-cols-12 bg-white overflow-hidden">
+      <div className="hidden lg:flex col-span-4 bg-brand-secondary p-12 flex-col justify-between text-white relative">
+        <div className="relative z-10">
+          <h2 className="text-4xl font-light mb-6 leading-tight italic text-white">
+            Bienvenido al Sistema de Gestión del <span className="font-bold">Poder Popular</span>
+          </h2>
+          <p className="text-white text-lg mb-8 leading-relaxed">
+            <span style={{ color: '#009b93' }}>Plataforma centralizada para el registro y validación de las instancias del autogobierno comunitario en el Municipio Carrizal.</span>
+          </p>
+          <ul className="space-y-4">
+            <li className="flex items-start gap-3">
+              <div className="w-5 h-5 rounded-full bg-brand-primary flex-shrink-0 flex items-center justify-center text-[10px] font-bold">✓</div>
+              <span className="text-white text-sm">Validación RBAC de perfiles reales</span>
+            </li>
+            <li className="flex items-start gap-3">
+              <div className="w-5 h-5 rounded-full bg-brand-primary flex-shrink-0 flex items-center justify-center text-[10px] font-bold">✓</div>
+              <span className="text-white text-sm">Vinculación administrativa directa</span>
+            </li>
+            <li className="flex items-start gap-3">
+              <div className="w-5 h-5 rounded-full bg-brand-primary flex-shrink-0 flex items-center justify-center text-[10px] font-bold">✓</div>
+              <span className="text-white text-sm">Monitoreo de gestión en tiempo real</span>
+            </li>
+          </ul>
+        </div>
+        
+        <div className="absolute -bottom-24 -left-24 w-80 h-80 bg-brand-primary rounded-full blur-3xl opacity-20"></div>
+        
+        <div className="text-[10px] font-bold uppercase tracking-widest text-brand-accent relative z-10">
+         <span style={{ color: '#009b93' }}> <p>© 2026 Secretaría de Participación Ciudadana • Alcaldía de Carrizal</p></span>
+        </div>
+      </div>
+
+      <div className="col-span-12 lg:col-span-8 p-12 flex items-center justify-center bg-gray-50/50">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="w-full max-w-md space-y-8"
+        >
+          <div className="text-center mb-10">
+            <h3 className="text-2xl font-bold text-gray-800 mb-2">Ingrese al Sistema</h3>
+            <p className="text-gray-500 text-sm">Identifíquese para acceder a sus funciones administrativas</p>
+          </div>
+
+          <div className="bg-white p-8 rounded-2xl shadow-xl shadow-gray-200/50 border border-gray-100 relative overflow-hidden">
+            <div className="absolute top-0 left-0 right-0 h-1 bg-brand-primary"></div>
+
+            <form className="space-y-6" onSubmit={handleSubmit}>
+              <div className="space-y-5">
+                {error && (
+                  <div className="text-red-600 text-xs font-bold text-center bg-red-50 py-2 rounded-lg border border-red-100">
+                    {error}
+                  </div>
+                )}
+
+                <div>
+                  <label htmlFor="email-address" className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">
+                    Correo Electrónico
+                  </label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none text-gray-400">
+                      <Mail className="h-4 w-4" />
+                    </div>
+                    <input
+                      id="email-address"
+                      type="email"
+                      required
+                      value={email}
+                      onChange={(e) => { setEmail(e.target.value); setError(null); }}
+                      className="block w-full rounded-xl border border-gray-200 bg-gray-50 py-3.5 pl-11 pr-4 focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary focus:bg-white outline-none transition-all text-sm"
+                      placeholder="ejemplo@carrizal.gov.ve"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label htmlFor="password" className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+                      Contraseña
+                    </label>
+                    <Link href="/forgot-password" intrinsic-title="Recuperar contraseña" className="text-[10px] font-bold text-brand-primary hover:underline">
+                      ¿Olvidó su contraseña?
+                    </Link>
+                  </div>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none text-gray-400">
+                      <Lock className="h-4 w-4" />
+                    </div>
+                    <input
+                      id="password"
+                      type="password"
+                      required
+                      value={password}
+                      onChange={(e) => { setPassword(e.target.value); setError(null); }}
+                      className="block w-full rounded-xl border border-gray-200 bg-gray-50 py-3.5 pl-11 pr-4 focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary focus:bg-white outline-none transition-all text-sm"
+                      placeholder="••••••••"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <button
+                  type="submit"
+                  disabled={isLoading}
+                  className="w-full flex items-center justify-center gap-2 rounded-xl bg-brand-primary py-4 px-6 text-sm font-bold text-white shadow-lg shadow-brand-primary/10 hover:bg-brand-secondary transition-all active:scale-95 disabled:opacity-50"
+                >
+                  {isLoading ? 'Cargando...' : 'Acceder'}
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <p className="text-center mt-10 text-[11px] font-semibold text-gray-400 uppercase tracking-wide">
+            ¿Requiere una cuenta? {' '}
+            <Link href="/register" className="text-brand-primary hover:underline decoration-2 underline-offset-2">
+              Solicite su registro aquí
+            </Link>
+          </p>
+        </motion.div>
+      </div>
+    </div>
+  );
+};
+
+export default LoginPage;
